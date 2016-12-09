@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include radplusplus *.css
+recursive-include radplusplus *.csv
+recursive-include radplusplus *.html
+recursive-include radplusplus *.ico
+recursive-include radplusplus *.js
+recursive-include radplusplus *.json
+recursive-include radplusplus *.md
+recursive-include radplusplus *.png
+recursive-include radplusplus *.py
+recursive-include radplusplus *.svg
+recursive-include radplusplus *.txt
+recursive-exclude radplusplus *.pyc
