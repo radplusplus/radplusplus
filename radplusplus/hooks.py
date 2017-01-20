@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from . import __version__ as app_version
 
 app_name = "radplusplus"
-app_title = "RADplusplus"
+app_title = "radplusplus"
 app_publisher = "RAD plus plus inc."
 app_description = "RAD additions to erpnext"
 app_icon = "octicon octicon-file-directory"
@@ -77,6 +77,26 @@ app_license = "MIT"
 # 		"on_trash": "method"
 #	}
 # }
+
+# List of events
+
+# validate
+# before_save
+# after_save
+# before_insert
+# after_insert
+# before_submit
+# before_cancel
+# before_update_after_submit
+# on_update
+# on_submit
+# on_cancel
+# on_update_after_submit
+doc_events = {
+	"Item": {
+		"after_insert": "radplusplus.radplusplus.doctype.bom_maker.bom_maker.make_bom"
+	}
+}
 
 # Scheduled Tasks
 # ---------------
