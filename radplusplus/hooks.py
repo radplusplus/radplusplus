@@ -94,7 +94,10 @@ app_license = "MIT"
 # on_update_after_submit
 doc_events = {
 	"Item": {
-		"after_insert": "radplusplus.radplusplus.doctype.bom_maker.bom_maker.make_bom"
+		"after_insert": "radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.create_from_item",
+		"on_trash": "radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.delete_from_item",
+		"after_insert": "radplusplus.radplusplus.doctype.bom_maker.bom_maker.make_bom",
+		"after_insert": "radplusplus.radplusplus.controllers.item_variant.make_variant_price_from_item_code"
 	}
 }
 
@@ -127,7 +130,29 @@ doc_events = {
 # Overriding Whitelisted Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "radplusplus.event.get_events"
-# }
+override_whitelisted_methods = {
+	"frappe.model.mapper.make_mapped_doc":"radplusplus.handler.make_mapped_doc",
+	"erpnext.selling.doctype.sales_order.sales_order.make_material_request":"radplusplus.sales_order_radpp.make_material_request",
+	"erpnext.erpnext.stock.utils.get_stock_balance":"radplusplus.radplusplus.radplusplus.stock.get_stock_balance",
+	"erpnext.stock.doctype.material_request.material_request.make_purchase_order" : "radplusplus.stock.doctype.material_request.material_request.make_purchase_order",
+	"erpnext.stock.doctype.material_request.material_request.make_request_for_quotation" : "radplusplus.stock.doctype.material_request.material_request.make_request_for_quotation",
+	"erpnext.stock.doctype.material_request.material_request.make_purchase_order_based_on_supplier" : "radplusplus.stock.doctype.material_request.material_request.make_purchase_order_based_on_supplier",
+	"erpnext.stock.doctype.material_request.material_request.make_stock_entry" : "radplusplus.stock.doctype.material_request.material_request.make_stock_entry",
+	"erpnext.stock.doctype.material_request.material_request.aise_production_orders" : "radplusplus.stock.doctype.material_request.material_request.aise_production_orders",
+	"erpnext.crm.doctype.lead.lead.get_lead_details" : "radplusplus.crm.doctype.lead.lead.get_lead_details",
+	"erpnext.crm.doctype.opportunity.opportunity.get_lead_details" : "radplusplus.crm.doctype.opportunity.opportunity.get_lead_details",
+	"erpnext.controllers.item_variant.create_variant" : "radplusplus.radplusplus.controllers.item_variant.create_variant"
+	}
+#"erpnext.controllers.item_variant.get_variant" : "radplusplus.radplusplus.controllers.item_variant.get_variant"
 
+doctype_js = {
+	"Sales Order":["public/js/configurator.js"],
+	"Quotation":["public/js/configurator.js"],
+	"Purchase Order":["public/js/configurator.js"],
+	"Stock Entry":["public/js/configurator.js"],
+	"Variant Price List":["public/js/configurator.js"],
+	"Opportunity":["public/js/configurator.js"],
+}
+# doctype_list_js = {
+	# "Sales Order":["public/js/configurator.js"],
+# }

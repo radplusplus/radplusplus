@@ -5,16 +5,13 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from erpnext.controllers.item_variant import (get_variant, copy_attributes_to_variant,
-	make_variant_item_code, validate_item_variant_attributes, ItemVariantExistsError,
-	make_variant_prices, GetItemVariantAttributesValues, GetItemAttributesValues,
-	create_variant_and_submit) #JDLP
+from radplusplus.radplusplus.controllers.item_variant import (get_item_variant_attributes_values, create_variant_and_submit) #JDLP
 
 
 class BomMaker(Document):
 	pass
 
-print_debug = True
+print_debug = False
 	
 @frappe.whitelist()
 def make_bom(item, method):
@@ -42,12 +39,13 @@ def make_variant_PV_PH(item):
 	
 	#bom.save(True)
 	#bom.docs = 1
+	bom.insert(ignore_permissions=True)
 	bom.submit()
 	
 def make_base_PM(item):
 	pm = "PM"
-	pm_attributes = GetItemVariantAttributesValues(pm)
-	item_attributes = GetItemVariantAttributesValues(item.item_code)
+	pm_attributes = get_item_variant_attributes_values(pm)
+	item_attributes = get_item_variant_attributes_values(item.item_code)
 	if print_debug: frappe.errprint("pm_attributes:" + str(pm_attributes))
 	if print_debug: frappe.errprint("item_attributes:" + str(item_attributes))
 	args = {}
