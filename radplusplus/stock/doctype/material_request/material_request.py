@@ -13,6 +13,7 @@ from frappe.model.mapper import get_mapped_doc
 from erpnext.stock.stock_balance import update_bin_qty, get_indented_qty
 from erpnext.controllers.buying_controller import BuyingController
 from erpnext.manufacturing.doctype.production_order.production_order import get_item_details
+from erpnext.stock.doctype.material_request.material_request import update_item, set_missing_values
 
 
 print_debug = True
