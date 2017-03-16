@@ -12,6 +12,38 @@ class BomMaker(Document):
 	pass
 
 print_debug = False
+
+@frappe.whitelist()
+def make_bom_from_template(template):
+	if print_debug: frappe.errprint("make_bom_from_template:")
+	if print_debug: frappe.errprint("template:" + template)
+	
+	items_list = frappe.get_list(
+		"Item",
+		filters={'variant_of': template},
+		fields=['name','variant_of']
+	)
+	
+	if print_debug: frappe.errprint("len(items_list):" + str(len(items_list)))
+	
+	if len(items_list) >0 :
+		if print_debug: frappe.errprint("if items_list:" )
+		for item in items_list:
+			doc_item = frappe.get_doc("Item",item.name)
+			if print_debug: frappe.errprint("doc_item.name:" + doc_item.name)
+			if doc_item.item_code:
+				if doc_item.variant_of in ["PV", "PH"] and not doc_item.default_bom:
+					frappe.errprint("doc_item.default_bom : " + str(doc_item.default_bom))
+					make_variant_pv_ph(doc_item)
+					frappe.errprint("après")
+	else:
+		frappe.msgprint("Aucun BOM créé.")
+	
+	frappe.msgprint("BOM créé.")
+	
+	#return template
+	
+		
 	
 @frappe.whitelist()
 def make_bom(item, method):
@@ -21,10 +53,10 @@ def make_bom(item, method):
 	if print_debug: frappe.errprint("configurator_of:" + str(item.configurator_of))
 			
 	if item.variant_of in ["PV", "PH"] and not has_bom(item.item_code):
-		make_variant_PV_PH(item)
+		make_variant_pv_ph(item)
 	
-def make_variant_PV_PH(item):
-	if print_debug: frappe.errprint("make_variant_PV_PH:")
+def make_variant_pv_ph(item):
+	if print_debug: frappe.errprint("make_variant_pv_ph:")
 	if print_debug: frappe.errprint("item_code:" + item.item_code)
 	
 	bom = make_bom_base(item)
