@@ -19,6 +19,13 @@ import radplusplus
 print_debug = False
 
 @frappe.whitelist()
+def item_after_insert(item, args):
+	#radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.create_from_item(item, args)
+	from radplusplus.radplusplus.doctype.bom_maker.bom_maker import make_bom
+	make_bom(item, args)
+	make_variant_price_from_item_code(item, args)
+
+@frappe.whitelist()
 def create_variant(item, args):
 	start_time = time.time()
 	variant = erpnext.controllers.item_variant.create_variant(item, args)
