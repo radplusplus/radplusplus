@@ -94,10 +94,8 @@ app_license = "MIT"
 # on_update_after_submit
 doc_events = {
 	"Item": {
-		"after_insert": "radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.create_from_item",
-		"on_trash": "radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.delete_from_item",
-		"after_insert": "radplusplus.radplusplus.doctype.bom_maker.bom_maker.make_bom",
-		"after_insert": "radplusplus.radplusplus.controllers.item_variant.make_variant_price_from_item_code"
+		"after_insert": "radplusplus.radplusplus.controllers.item_variant.item_after_insert",
+		"on_trash": "radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.delete_from_item"
 	}
 }
 
