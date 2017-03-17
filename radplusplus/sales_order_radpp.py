@@ -33,7 +33,6 @@ def make_material_request(source_name, target_doc=None):
 	def update_item(source, target, source_parent):
 		target.project = source_parent.project
 		target.schedule_date = source_parent.delivery_date #2016-11-01 - JDLP
-		#target.sales_order = None #2017-03-14 - RENMAI - pour garder le lien entre cv et mtlreq
 
 	doc = get_mapped_doc("Sales Order", source_name, {
 		"Sales Order": {
