@@ -44,7 +44,6 @@ def make_bom_from_template(template):
 	#return template
 	
 		
-	
 @frappe.whitelist()
 def make_bom(item, method):
 	if print_debug: frappe.errprint("make_bom:")

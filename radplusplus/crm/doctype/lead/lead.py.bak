@@ -17,7 +17,7 @@ sender_field = "email_id"
 @frappe.whitelist()
 def get_lead_details(lead, posting_date=None, company=None):
 	if not lead: return {}
-	
+
 	# 2017-03-10 - renmai - copié la fonction get_lead_details au lieu de l'appel du module erpnext.
 	# Partait en boucle.
 	from erpnext.accounts.party import set_address_details
