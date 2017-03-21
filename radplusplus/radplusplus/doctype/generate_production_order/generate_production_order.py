@@ -8,6 +8,7 @@ from frappe.utils import cstr, flt, cint, nowdate, add_days, comma_and
 from frappe import msgprint, _
 
 from frappe.model.document import Document
+import erpnext
 from erpnext.manufacturing.doctype.bom.bom import validate_bom_no
 from erpnext.manufacturing.doctype.production_order.production_order import get_item_details
 
