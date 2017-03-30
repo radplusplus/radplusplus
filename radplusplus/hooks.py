@@ -95,6 +95,7 @@ app_license = "MIT"
 doc_events = {
 	"Item": {
 		"after_insert": "radplusplus.radplusplus.controllers.item_variant.item_after_insert",
+		"before_save": "radplusplus.radplusplus.controllers.item_variant.item_before_save",
 		"on_trash": "radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.delete_from_item"
 	}
 }

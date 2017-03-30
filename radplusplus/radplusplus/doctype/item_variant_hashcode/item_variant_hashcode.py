@@ -7,6 +7,7 @@ import frappe
 from frappe.utils import cstr, flt
 from frappe.model.document import Document
 import hashlib
+from radplusplus.radplusplus.controllers.item_variant import get_item_variant_attributes_values
 
 class ItemVariantHashCode(Document):
 	pass
@@ -17,8 +18,8 @@ def create_from_item(item, method):
 	create_from_variant(item)
 	
 def create_from_variant(item):	
-	if item.variant_of:
-		hash_code = get_hash_code([x.attribute_value for x in item.attributes])
+	if item.variant_of is not None:
+		hash_code = get_hash_code(item.variant_of, [x.attribute_value for x in item.attributes])
 				
 		item_variant_hash_code = get_variant_hashcode_from_item_code(item.item_code)
 		if item_variant_hash_code is None:
@@ -27,8 +28,12 @@ def create_from_variant(item):
 		item_variant_hash_code.hashcode = hash_code
 		item_variant_hash_code.save(True)
 
-def get_hash_code(attribute_value_list):
-	att_str = ""
+def get_hash_code(template_name, attribute_value_list):
+	att_str = template_name
+	attributes = get_item_variant_attributes_values(template_name)
+	
+	frappe.errprint("attributes: " + cstr(attributes))
+	frappe.errprint("attribute_value_list: " + cstr(attribute_value_list))
 	for value in attribute_value_list:
 		att_str += value
 		
@@ -39,23 +44,18 @@ def get_hash_code(attribute_value_list):
 def get_variant_hashcode_from_item_code(item_code):
 	filters = {"item": item_code}
 	name = frappe.db.get_value("Item Variant HashCode",	filters,"name",None,False,False,False)
-	if name:
+	if name is not None:
 		return frappe.get_doc("Item Variant HashCode", name)
 		
 def get_item_from_variant_hashcode(hashcode):
 	frappe.errprint("get_item_from_variant_hashcode")
 	frappe.errprint("hashcode: " + hashcode)
-	item_variant_hashcode = frappe.get_doc("Item Variant HashCode", hashcode)
 	
-	filters = {"hashcode": hashcode}
-	name = frappe.db.get_value("Item Variant HashCode",	filters,"name",None,False,False,False)
-	frappe.errprint("name: " + name)
-	if name:
-		return frappe.get_doc("Item Variant HashCode", name).item
-
-@frappe.whitelist()		
-def get_item_from_attribute_value_list(attribute_value_list):
-	return get_item_from_variant_hashcode(get_hash_code(attribute_value_list))
+	if frappe.db.exists("Item Variant HashCode", hashcode):
+		return frappe.get_doc("Item Variant HashCode", hashcode).item
+	
+def get_item_from_attribute_value_list(template_name, attribute_value_list):
+	return get_item_from_variant_hashcode(get_hash_code(template_name, attribute_value_list))
 	
 @frappe.whitelist()
 def delete_from_item(item, method):
@@ -72,3 +72,26 @@ def update_all_variants():
 	for variant in variants:
 		create_from_variant(frappe.get_doc("Item", variant))
 
+
+##### Hashcode #####
+@frappe.whitelist()
+def get_variant(template, args, variant=None):
+	frappe.errprint("radpp get_variant ")
+	"""Validates Attributes and their Values, then looks for an exactly matching Item Variant
+
+		:param item: Template Item
+		:param args: A dictionary with "Attribute" as key and "Attribute Value" as value
+	"""
+	if isinstance(args, basestring):
+		args = json.loads(args)
+
+	if not args:
+		frappe.throw(_("Please specify at least one attribute in the Attributes table"))
+	
+	item = get_item_from_attribute_value_list(template, args.values())
+	if item is not None:
+		frappe.errprint(" item_code : " + item.item_code)
+		return item.item_code
+		
+	#return find_variant(template, args, variant)
+##### #####

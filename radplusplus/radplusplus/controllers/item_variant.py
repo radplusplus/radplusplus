@@ -20,10 +20,15 @@ print_debug = False
 
 @frappe.whitelist()
 def item_after_insert(item, args):
-	#radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.create_from_item(item, args)
+	if print_debug: frappe.errprint("item_after_insert :" + cstr(item))
 	from radplusplus.radplusplus.doctype.bom_maker.bom_maker import make_bom
 	make_bom(item, args)
 	make_variant_price_from_item_code(item, args)
+
+@frappe.whitelist()
+def item_before_save(item, args):
+	if print_debug: frappe.errprint("item_before_save :" + cstr(item))
+	make_variant_description(item)
 
 @frappe.whitelist()
 def create_variant(item, args):
@@ -32,8 +37,8 @@ def create_variant(item, args):
 	frappe.errprint("--- create_variant %s seconds ---" % (time.time() - start_time))
 	
 	start_time = time.time()
-	update_description(item, variant)
-	frappe.errprint("--- update_description %s seconds ---" % (time.time() - start_time))
+	make_variant_description(variant)
+	frappe.errprint("--- make_variant_description %s seconds ---" % (time.time() - start_time))
 	return variant
 
 
@@ -55,71 +60,75 @@ def get_variant(template, args, variant=None):
 	from radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode import get_item_from_attribute_value_list
 	
 	frappe.errprint(" after import " )
-	item_code = get_item_from_attribute_value_list(args.values())
-	frappe.errprint(" item_code : " + item_code)
+	item_code = get_item_from_attribute_value_list(template, args.values())
+	frappe.errprint(" item_code : " + cstr(item_code))
 	if item_code:
 		return item_code
 		
 	#return find_variant(template, args, variant)
 	
-def update_description(item, variant):			
-	template = frappe.get_doc("Item", item)
-	make_variant_description(template, variant)
+#Obsolete
+#def update_description(template_item_code, variant):			
+#	template = frappe.get_doc("Item", template_item_code)
+#	make_variant_description(template, variant)
 
 # 2016-11-25 - JDLP
 # Fonction pour gérer la description en utilisant les templates
 # Permet de gère les description en plusieurs langues
-def make_variant_description(template, variant):
+@frappe.whitelist()
+def make_variant_description(variant):
 #Matière première en {{Wood Species}}, {{Wood Grad}},{{Wood Width}}
 #Raw material, {{Wood Species}}, {{Wood Grad}},{{Wood Width}}
 	# {u'Wood Width': u'2-5/8"'
 	#, u'Wood Grade': u'Colonial - (GRADE-CN)'
 	#, u'Wood Species': u'Pine'
 	#, u'Thickness': u'4/4'}
-	for template in template.description_template:
-		jinjaTemplate = template.description
-		values = {}
-		for d in variant.attributes:
-			attribute = frappe.get_doc("Item Attribute", d.attribute)
-			jinjaTemplate = jinjaTemplate.replace("{{"+d.attribute, "{{"+attribute.field_name)
-			
-			if print_debug: frappe.errprint(template.language)
-			target_field = "target_name"
-			source_field = "source_name"
-			template_language = template.language
-			if template.language == "en":
-				target_field = "source_name"
-				source_field = "target_name"
-				template_language = "fr"
+	if variant.variant_of is not None:
+		template = frappe.get_doc("Item", variant.variant_of)
+		for template in template.description_template:
+			jinjaTemplate = template.description
+			values = {}
+			for d in variant.attributes:
+				attribute = frappe.get_doc("Item Attribute", d.attribute)
+				jinjaTemplate = jinjaTemplate.replace("{{"+d.attribute, "{{"+attribute.field_name)
 				
-			if print_debug: frappe.errprint(d.attribute)
-			if print_debug: frappe.errprint(attribute.field_name)
-			if print_debug: frappe.errprint(d.attribute_value)
-			
-			filters = {'language_code': template_language,source_field:d.attribute_value}
-			target_name = frappe.db.get_value("Translation",filters,target_field,None,False,False,False)
-			values[attribute.field_name] = target_name or d.attribute_value
-			if print_debug: frappe.errprint(target_name)
+				if print_debug: frappe.errprint(template.language)
+				target_field = "target_name"
+				source_field = "source_name"
+				template_language = template.language
+				if template.language == "en":
+					target_field = "source_name"
+					source_field = "target_name"
+					template_language = "fr"
+					
+				if print_debug: frappe.errprint(d.attribute)
+				if print_debug: frappe.errprint(attribute.field_name)
+				if print_debug: frappe.errprint(d.attribute_value)
+				
+				filters = {'language_code': template_language,source_field:d.attribute_value}
+				target_name = frappe.db.get_value("Translation",filters,target_field,None,False,False,False)
+				values[attribute.field_name] = target_name or d.attribute_value
+				if print_debug: frappe.errprint(target_name)
+				if print_debug: frappe.errprint(jinjaTemplate)
+				
 			if print_debug: frappe.errprint(jinjaTemplate)
+			if print_debug: frappe.errprint(values)
+			description = render_template(jinjaTemplate, values)
 			
-		if print_debug: frappe.errprint(jinjaTemplate)
-		if print_debug: frappe.errprint(values)
-		description = render_template(jinjaTemplate, values)
-		
-		filters = {"parent": variant.name,
-						"parentfield": "language",
-						"parenttype": "Item",
-						"language": template.language}
-		name = frappe.db.get_value("Item Language",	filters,"name",None,False,False,False)
-		language_description = None
-		if name:
-			language_description = frappe.get_doc("Item Language", name)
-		if not language_description:
-			values = filters
-			values["doctype"] = "Item Language"
-			language_description = frappe.get_doc(values)
-		language_description.description = description
-		variant.append("language", language_description)
+			filters = {"parent": variant.name,
+							"parentfield": "language",
+							"parenttype": "Item",
+							"language": template.language}
+			name = frappe.db.get_value("Item Language",	filters,"name",None,False,False,False)
+			language_description = None
+			if name:
+				language_description = frappe.get_doc("Item Language", name)
+			if not language_description:
+				values = filters
+				values["doctype"] = "Item Language"
+				language_description = frappe.get_doc(values)
+			language_description.description = description
+			variant.append("language", language_description)
 
 # 2016-08-23 Ajoute par Antonio pour creer et faire le submit 
 @frappe.whitelist()
