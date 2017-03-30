@@ -136,7 +136,7 @@ override_whitelisted_methods = {
 	"erpnext.stock.doctype.material_request.material_request.make_request_for_quotation" : "radplusplus.stock.doctype.material_request.material_request.make_request_for_quotation",
 	"erpnext.stock.doctype.material_request.material_request.make_purchase_order_based_on_supplier" : "radplusplus.stock.doctype.material_request.material_request.make_purchase_order_based_on_supplier",
 	"erpnext.stock.doctype.material_request.material_request.make_stock_entry" : "radplusplus.stock.doctype.material_request.material_request.make_stock_entry",
-	"erpnext.stock.doctype.material_request.material_request.aise_production_orders" : "radplusplus.stock.doctype.material_request.material_request.aise_production_orders",
+	"erpnext.stock.doctype.material_request.material_request.raise_production_orders" : "radplusplus.stock.doctype.material_request.material_request.raise_production_orders",
 	"erpnext.crm.doctype.lead.lead.get_lead_details" : "radplusplus.crm.doctype.lead.lead.get_lead_details",
 	"erpnext.crm.doctype.opportunity.opportunity.get_lead_details" : "radplusplus.crm.doctype.opportunity.opportunity.get_lead_details",
 	"erpnext.controllers.item_variant.create_variant" : "radplusplus.radplusplus.controllers.item_variant.create_variant"
