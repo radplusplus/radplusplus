@@ -14,16 +14,18 @@ import erpnext
 from erpnext.controllers.item_variant import validate_item_variant_attributes
 import time
 import radplusplus
+import myrador
 
 ########################## Section Rad++ ##########################
 print_debug = False
 
-@frappe.whitelist()
-def item_after_insert(item, args):
-	if print_debug: frappe.errprint("item_after_insert :" + cstr(item))
-	from radplusplus.radplusplus.doctype.bom_maker.bom_maker import make_bom
-	make_bom(item, args)
-	make_variant_price_from_item_code(item, args)
+#Déplacé dans Myrador
+# @frappe.whitelist()
+# def item_after_insert(item, args):
+	# if print_debug: frappe.errprint("item_after_insert :" + cstr(item))
+	# from myrador.controllers.controllers import item_after_insert
+	# item_after_insert(item, args)
+	
 
 @frappe.whitelist()
 def item_before_save(item, args):
@@ -330,148 +332,3 @@ def create_batch_variants(configurator_of, batch_name):
 		
 	return created_items
 
-
-# 2016-11-09 - JDLP
-def make_variant_prices(item_code):
-	if print_debug: frappe.errprint("make_variant_prices")
-	if print_debug: frappe.errprint("item_code:" + item_code)
-	
-	item = frappe.get_doc('Item', item_code)
-	template_item_code = frappe.db.get_value("Item", {"configurator_of":item.variant_of}, "item_code")
-	if print_debug: frappe.errprint("variant_of:" + item.variant_of)
-	if print_debug: frappe.errprint("variant_of:" + template_item_code)
-	if item.variant_of:
-		variant_price_lists = frappe.get_all('Variant Price List', fields=["price_list"], filters={'configurator': template_item_code})
-			
-		if print_debug: frappe.errprint(variant_price_lists)
-		for variant_price_list in variant_price_lists:
-			if print_debug: frappe.errprint(variant_price_list["price_list"])
-			make_variant_price(variant_price_list["price_list"], item_code)
-	
-@frappe.whitelist()
-def make_variant_price_from_item_code(item, method):
-	make_variant_prices(item.item_code)		
-	
-# 2016-11-09 - JDLP
-def make_variant_price(variant_price_list, item_code):
-	if print_debug: frappe.errprint("make_variant_price")
-	attribute_values = get_item_variant_attributes_values(item_code)
-	if print_debug: frappe.errprint(attribute_values)
-	args = {'parent': variant_price_list,
-			'construction': 0,
-			'species': 0,
-			'flooring_grade': 0,
-			'flooring_width': 0,
-			'thickness' : 0,
-	}
-	for pair in attribute_values:
-		if pair[2] in args.keys():
-			args[pair[2]] = pair[1]
-	if print_debug: frappe.errprint(args)
-	query = frappe.db.get_value('Variant Price', args, 'rate')
-	if print_debug: frappe.errprint(query)
-	if (query):
-		make_price_item(variant_price_list, item_code, query)
-	
-# 2016-11-09 - JDLP	
-def make_price_item(price_list, item_code, rate):
-	price_items = frappe.get_all('Item Price', filters={'price_list': price_list,
-		'item_code': item_code}, fields=['name'])
-	
-	price_item = None
-	if price_items:
-		price_item = frappe.get_doc('Item Price', price_items[0]['name'])
-		if print_debug: frappe.errprint("price_item=" + _(price_items))
-		if print_debug: frappe.errprint("price_item=" + price_items[0]['name'])
-		if print_debug: frappe.errprint("price_item=" + _(price_item))
-	
-	if price_item:
-		if price_item.price_list_rate != rate:
-			price_item.price_list_rate = rate
-			price_item.save(True)
-	else:
-		price_item = frappe.new_doc("Item Price")
-		price_item.item_code = item_code
-		price_item.price_list = price_list
-		price_item.price_list_rate = rate
-		price_item.save(True)
-		
-# 2016-11-09 - JDLP
-def make_variant_prices_v2(item_code):
-	if print_debug: frappe.errprint("make_variant_prices")
-	if print_debug: frappe.errprint("item_code:" + item_code)
-	
-	item = frappe.get_doc('Item', item_code)
-	template_item_code = frappe.db.get_value("Item", {"configurator_of":item.variant_of}, "item_code")
-	if print_debug: frappe.errprint("variant_of:" + item.variant_of)
-	if print_debug: frappe.errprint("variant_of:" + template_item_code)
-	if item.variant_of:
-		variant_price_lists = frappe.get_all('Variant Price List', fields=["price_list"], filters={'configurator': template_item_code})
-			
-		if print_debug: frappe.errprint(variant_price_lists)
-		for variant_price_list in variant_price_lists:
-			if print_debug: frappe.errprint(variant_price_list["price_list"])
-			make_variant_price_v2(variant_price_list["price_list"], item_code)
-
-# 2016-11-09 - JDLP
-def make_variant_price_v2(variant_price_list, item_code):
-	print_debug=False
-	attribute_values = get_item_variant_attributes_values(item_code)
-	fields = frappe.db.get_table_columns('Variant Price')
-	variant_price_list_doc = frappe.get_doc('Variant Price List', variant_price_list)
-	
-	if print_debug: frappe.errprint(attribute_values)
-	if print_debug: frappe.errprint(fields)
-	if print_debug: frappe.errprint(variant_price_list_doc)
-	
-	query = u" SELECT `tabVariant Price`.rate"
-	query += "\n FROM `tabVariant Price List`"
-	query += "\n INNER JOIN `tabVariant Price` ON `tabVariant Price List`.`name` = `tabVariant Price`.parent"
-	query += "\n WHERE"
-	query += "\n `tabVariant Price List`.price_list = '" + variant_price_list_doc.price_list + "' AND"
-	query += "\n `tabVariant Price List`.configurator = '" + variant_price_list_doc.configurator + "' "
-	
-	for pair in attribute_values:
-		if pair[2] in fields:
-			query += "\n AND (`tabVariant Price`." + pair[2] + " = '" + pair[1].replace("'","''") + "'"
-			query += " OR `tabVariant Price`." + pair[2] + " IS NULL " 
-			query += " OR `tabVariant Price`." + pair[2] + u" = 'ANY' "
-			query += " OR `tabVariant Price`." + pair[2] + u" = 'TOUS' )"
-			
-	query += " ORDER BY `tabVariant Price List`.priority DESC"
-	
-	if print_debug: frappe.errprint(query)
-	
-	rate = frappe.db.sql(query)
-	if print_debug: frappe.errprint(rate)
-	if (rate):
-		make_price_item_v2(variant_price_list_doc, item_code, rate[0][0])
-	
-
-# 2016-11-09 - JDLP	
-def make_price_item_v2(variant_price_list, item_code, rate):
-	if print_debug: frappe.errprint("make_price_item(" + _(variant_price_list) + ','  + _(item_code) + ','  + _(rate) + ')')
-	if print_debug: frappe.errprint("price_list:" + _(variant_price_list.price_list))
-	
-	price_items = frappe.get_all('Item Price', filters={'price_list': variant_price_list.price_list,
-		'item_code': item_code}, fields=['name'])
-	
-	price_item = None
-	if price_items:
-		price_item = frappe.get_doc('Item Price', price_items[0]['name'])
-	
-	if price_item:
-		if price_item.price_list_rate != rate:
-			price_item.price_list_rate = rate
-			price_item.variant_price_list = variant_price_list.name
-			price_item.save(True)
-			
-	else:
-		price_item = frappe.new_doc("Item Price")
-		price_item.item_code = item_code
-		price_item.price_list = variant_price_list.price_list
-		price_item.price_list_rate = rate
-		price_item.variant_price_list = variant_price_list.name
-		price_item.save(True)
-		
-	if print_debug: frappe.errprint("price_item=" + _(price_items))
