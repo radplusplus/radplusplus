@@ -29,7 +29,12 @@ def create_from_variant(item):
 		item_variant_hash_code.save(True)
 
 def get_hash_code(template_name, attribute_value_list):
-	att_str = template_name
+	
+	if isinstance(template_name, basestring):
+		att_str = template_name
+	else:
+		att_str = template_name.name
+	#att_str = template_name
 	attributes = get_item_variant_attributes_values(template_name)
 	
 	frappe.errprint("attributes: " + cstr(attributes))

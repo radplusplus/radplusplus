@@ -44,7 +44,7 @@ def create_variant(item, args):
 
 @frappe.whitelist()
 def get_variant(template, args, variant=None):
-	frappe.errprint("radpp get_variant ")
+	if print_debug: frappe.errprint("radpp get_variant ")
 	"""Validates Attributes and their Values, then looks for an exactly matching Item Variant
 
 		:param item: Template Item
@@ -56,12 +56,12 @@ def get_variant(template, args, variant=None):
 	if not args:
 		frappe.throw(_("Please specify at least one attribute in the Attributes table"))
 	
-	frappe.errprint(" before import " )
+	if print_debug: frappe.errprint(" before import " )
 	from radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode import get_item_from_attribute_value_list
 	
-	frappe.errprint(" after import " )
+	if print_debug: frappe.errprint(" after import " )
 	item_code = get_item_from_attribute_value_list(template, args.values())
-	frappe.errprint(" item_code : " + cstr(item_code))
+	if print_debug: frappe.errprint(" item_code : " + cstr(item_code))
 	if item_code:
 		return item_code
 		
