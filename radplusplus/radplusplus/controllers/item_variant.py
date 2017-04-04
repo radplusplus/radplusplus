@@ -34,13 +34,21 @@ def item_before_save(item, args):
 
 @frappe.whitelist()
 def create_variant(item, args):
+	if isinstance(item, basestring):
+		item = frappe.get_doc('Item', item)
+		
 	start_time = time.time()
-	variant = erpnext.controllers.item_variant.create_variant(item, args)
-	frappe.errprint("--- create_variant %s seconds ---" % (time.time() - start_time))
+	variant = erpnext.controllers.item_variant.create_variant(item.item_code, args)
+	if print_debug: frappe.errprint("--- create_variant %s seconds ---" % (time.time() - start_time))
 	
-	start_time = time.time()
-	make_variant_description(variant)
-	frappe.errprint("--- make_variant_description %s seconds ---" % (time.time() - start_time))
+	#start_time = time.time()
+	#make_variant_description(variant)
+	
+	#if print_debug: frappe.errprint("--- make_variant_description %s seconds ---" % (time.time() - start_time))
+	
+	from radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode import create_from_item
+	create_from_item(item, args)
+	
 	return variant
 
 
@@ -161,7 +169,7 @@ def create_variant_and_submit(template_item_code, args):
 	frappe.errprint("--- get_variant %s seconds ---" % (time.time() - start_time3))
 	if variant is None:
 		start_time4 = time.time()
-		variant = create_variant(template_item_code, args)
+		variant = create_variant(template, args)
 		frappe.errprint("--- create_variant %s seconds ---" % (time.time() - start_time4))
 		
 		#Tenter de trouver un item avec le meme code
