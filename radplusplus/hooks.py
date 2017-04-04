@@ -92,12 +92,12 @@ app_license = "MIT"
 # on_submit
 # on_cancel
 # on_update_after_submit
-doc_events = {
-	"Item": {
-		"after_insert": "radplusplus.radplusplus.controllers.item_variant.item_after_insert",
-		"on_trash": "radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.delete_from_item"
-	}
-}
+# doc_events = {
+	# "Item": {
+		# "after_insert": "radplusplus.radplusplus.controllers.item_variant.item_after_insert",
+		# "before_save": "radplusplus.radplusplus.controllers.item_variant.item_before_save"
+	# }
+# }
 
 # Scheduled Tasks
 # ---------------

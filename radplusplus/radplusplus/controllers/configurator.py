@@ -68,6 +68,19 @@ def get_item_variant_attributes_values(user_name, item_code):
 	frappe.errprint("rows:" + cstr(rows))
 	return rows
 	
+@frappe.whitelist()
+def get_attributes_values(attribute):
+	args = {'attribute': attribute}
+	query = frappe.db.sql("""
+			SELECT
+			`tabItem Attribute Value`.parent,
+			`tabItem Attribute Value`.attribute_value
+			FROM
+			`tabItem Attribute Value`
+			WHERE
+			`tabItem Attribute Value`.parent = %(attribute)s""", args, as_list = 1)
+	
+	return query
 	
 def get_user_lang(user_name):
 	lang = frappe.db.get_value("User", user_name, "language")
@@ -103,6 +116,7 @@ def update_user_translations(lang):
 		frappe.local.lang_full_dict.update(out)
 		out[key] = lang
 
+@frappe.whitelist()
 def get_configurator_attributes():
 	query = frappe.db.sql("""
 	SELECT
