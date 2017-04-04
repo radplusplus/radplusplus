@@ -152,7 +152,7 @@ def create_variant_and_submit(template_item_code, args):
 		args = json.loads(args)
 	
 	if print_debug: frappe.errprint(template_item_code)
-	if print_debug: frappe.errprint(args)
+	#if print_debug: frappe.errprint(args)
 	
 	template = frappe.get_doc("Item", template_item_code)
 	
