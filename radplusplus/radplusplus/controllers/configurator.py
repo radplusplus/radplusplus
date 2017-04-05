@@ -16,7 +16,7 @@ print_debug = False
 
 @frappe.whitelist()
 def get_configurator_attributes_values(user_name):
-	frappe.errprint("get_configurator_attributes_values")
+	if print_debug: frappe.errprint("get_configurator_attributes_values")
 	if print_debug: frappe.errprint("get_configurator_attributes_values")
 	if print_debug: frappe.errprint("user:" + user_name)
 	lang = get_user_lang(user_name)
@@ -60,12 +60,12 @@ def get_item_variant_attributes_values(user_name, item_code):
 			ORDER BY
 			`tabItem Variant Attribute`.idx ASC""", args, as_list = 1)
 	update_user_translations(get_user_lang(user_name))
-	frappe.errprint("query:" + cstr(query))
+	if print_debug: frappe.errprint("query:" + cstr(query))
 	rows = []
 	for q in query:
 		rows.append((q[0],_(q[1])))
 	
-	frappe.errprint("rows:" + cstr(rows))
+	if print_debug: frappe.errprint("rows:" + cstr(rows))
 	return rows
 	
 @frappe.whitelist()
@@ -143,7 +143,7 @@ def groupe_attributes_and_translate(attributes_values):
 		for item in subiter:
 			#Tuple of value and translation
 			t = (item[1], _(item[1]))
-			frappe.errprint(t)
+			if print_debug: frappe.errprint(t)
 			list.append(t)
 		data[key] = list
 	return data

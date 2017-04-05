@@ -10,6 +10,7 @@ app_icon = "octicon octicon-file-directory"
 app_color = "'blue'"
 app_email = "info@radplusplus.com"
 app_license = "MIT"
+fixtures = ["Custom Script"]
 
 # Includes in <head>
 # ------------------
