@@ -2,7 +2,7 @@
 // License: GNU General Public License v3. See license.txt
 
 ///////////////////////////////////////////////////////////////////////
-/////////////////////////// Code spécifique ///////////////////////////
+/////////////////////////// Code specifique ///////////////////////////
 
 /////////////////////////////// Handles ///////////////////////////////
 frappe.ui.form.on("Sales Order",{
@@ -11,8 +11,6 @@ frappe.ui.form.on("Sales Order",{
 		
 		// Lancer la fonction "LoadAttributesValues" au "onLoad" du formulaire parent.
 		LoadAttributesValues(false, frm, "items")
-		
-		
 	},
 	
 	"refresh": function(frm) {
@@ -27,19 +25,19 @@ frappe.ui.form.on("Sales Order Item", "item_code", function(frm, cdt, cdn) {
 });
 
 // 2016-10-17 - JDLP
-// Lancer la fonction "CreateItemVariant"lorque le bouton "create_variant" est activé.
+// Lancer la fonction "CreateItemVariant"lorque le bouton "create_variant" est active.
 frappe.ui.form.on("Sales Order Item", "create_variant", function(frm, cdt, cdn) {
     CreateItemVariant(false, frm, cdt, cdn, true, false)
 });
 
 // 2016-11-01 - JDLP
-// Lancer la fonction "ReconfigurerItemVariant" lorque le bouton "reconfigure" est activé.
+// Lancer la fonction "ReconfigurerItemVariant" lorque le bouton "reconfigure" est active.
 frappe.ui.form.on("Sales Order Item", "reconfigure", function(doc, cdt, cdn) {
     ReconfigurerItemVariant(false, doc, cdt, cdn)
 });
 ///////////////////////////// FIN Handles /////////////////////////////
 
-////////////////////////////// Méthodes ///////////////////////////////
+////////////////////////////// Methodes ///////////////////////////////
 // 2016-10-26 - JDLP
 // Copier les valeurs de d'autres DocTypes
 cur_frm.add_fetch("customer", "default_warehouse", "default_warehouse");
@@ -47,7 +45,7 @@ cur_frm.add_fetch("customer", "default_warehouse", "default_warehouse");
 
 // 2016-10-24 - JDLP
 // Script fonctionnel
-// Permet d'assigner les valeurs par défaut
+// Permet d'assigner les valeurs par defaut
 function AssignDefaultValues(printDebug, frm, cdt, cdn) {
     if (printDebug) console.log(__("AssignDefaultValues"));
 
@@ -68,7 +66,7 @@ function AssignDefaultValues(printDebug, frm, cdt, cdn) {
 
 // 2017-02-28 - RM
 // Script fonctionnel
-// Permet d'assigner l'entete de lettre à la commande de vente selon le vendeur sélectionné.
+// Permet d'assigner l'entete de lettre a la commande de vente selon le vendeur selectionne.
 cur_frm.add_fetch('sales_person','letter_head','letter_head')
 
 // 2017-03-06 - JDLP
@@ -85,8 +83,6 @@ frappe.ui.form.on("Sales Order Item", "template_service", function(frm, cdt, cdn
                     if (res.message != null){
                         console.log("res.message:" + res.message);
                         frappe.model.set_value(soi.doctype, soi.name, "rate", res.message);
-                        //var grid_row = cur_frm.open_grid_row();
-                        //grid_row.grid_form.fields_dict.rate.set_value(res.message);
                         refresh_field("rate");
                     }
                 }
@@ -94,6 +90,6 @@ frappe.ui.form.on("Sales Order Item", "template_service", function(frm, cdt, cdn
     }
 });
 
-//////////////////////////// Fin Méthodes /////////////////////////////
-///////////////////////// FIN Code spécifique /////////////////////////
+//////////////////////////// Fin Methodes /////////////////////////////
+///////////////////////// FIN Code specifique /////////////////////////
 ///////////////////////////////////////////////////////////////////////
