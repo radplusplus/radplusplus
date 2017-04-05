@@ -3,7 +3,7 @@
 
 /////////////////////////////// Handles ///////////////////////////////
 // 2017-04-05 - RENMAI
-// définir les valeurs par défaut.
+// definir les valeurs par defaut.
 frappe.ui.form.on("Sales Order",{
 	"onload": function(frm) {
 		console.log(__("Custom Script Fixture"));
@@ -12,5 +12,4 @@ frappe.ui.form.on("Sales Order",{
 	"refresh": function(frm) {
 		console.log(__("Custom Script Fixture"));
 	}
-	//cur_frm.add_fetch("lead","language","language")
 });
