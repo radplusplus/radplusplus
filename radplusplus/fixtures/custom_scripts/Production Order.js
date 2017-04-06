@@ -5,7 +5,7 @@
 frappe.ui.form.on("Production Order",{
 	"onload": function(frm) {		
 		// 2017-03-28 - RENMAI
-		//Permet d'assigner le client l'ordre de fabrication selon la commande de vente sélectionnée.
+		// Permet d'assigner le client l'ordre de fabrication selon la commande de vente selectionnee.
 		frappe.db.get_value("Sales Order", { name: cur_frm.doc.sales_order },
 			"customer", function(data){
 		cur_frm.set_value("customer", data.customer); });
