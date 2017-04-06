@@ -1,180 +1,115 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-// License: GNU General Public License v3. See license.txt
+///////////////////////////////////////////////////////////////////////
+/////////////////////////// Code specifique ///////////////////////////
 
+// 2017-02-28 - RENMAI
+// Permet d'assigner l'entete de lettre à la commande de vente selon le vendeur selectionne.
+cur_frm.add_fetch('sales_person','letter_head','letter_head')
 
-{% include 'erpnext/selling/sales_common.js' %}
-
-frappe.ui.form.on('Quotation', {
-	setup: function(frm) {
-		frm.custom_make_buttons = {
-			'Sales Order': 'Make Sales Order'
+/////////////////////////////// Handles ///////////////////////////////
+frappe.ui.form.on("Quotation",{
+	"onload": function(frm) {		
+		// Lancer la fonction "LoadAttributesValues" au "onLoad" du formulaire parent.
+		LoadAttributesValues(false, frm, "items")
+	},
+	
+	"refresh": function(frm) {
+		// RENMAI - 2017-04-05 - Gestion de la langue d'impression.
+		// Retrouver la valeur de language du client ou du prospect.
+		if (frm.doc.quotation_to == "Customer" && frm.doc.customer){
+			// Retrouver la valeur de language
+			frappe.call({
+				method: "frappe.client.get_value",
+				args: {
+					"doctype": "Customer",
+					"filters": {
+						"name": frm.doc.customer
+					},
+					"fieldname": ["language"]
+				},
+				callback: function(res) {
+					cur_frm.set_value('language', res.message.language);
+					refresh_field("language");
+				}
+			});
 		}
-	}
-});
-
-erpnext.selling.QuotationController = erpnext.selling.SellingController.extend({
-	onload: function(doc, dt, dn) {
-		var me = this;
-		this._super(doc, dt, dn);
-		if(doc.customer && !doc.quotation_to)
-			doc.quotation_to = "Customer";
-		else if(doc.lead && !doc.quotation_to)
-			doc.quotation_to = "Lead";
-
+		else if (frm.doc.quotation_to == "Lead"){
+			// Retrouver la valeur de language
+			console.log(__("frm.doc.lead : " + frm.doc.lead));
+			frappe.call({
+				method: "frappe.client.get_value",
+				args: {
+					"doctype": "Lead",
+					"filters": {
+						"name": frm.doc.lead
+					},
+					"fieldname": ["language"]
+				},
+				callback: function(res) {
+					cur_frm.set_value('language', res.message.language);
+					refresh_field("language");
+				}
+			});
+		} 
 	},
-	refresh: function(doc, dt, dn) {
-		this._super(doc, dt, dn);
-		if(doc.docstatus == 1 && doc.status!=='Lost') {
-			cur_frm.add_custom_button(__('Make Sales Order'),
-				cur_frm.cscript['Make Sales Order']);
-
-			if(doc.status!=="Ordered") {
-				cur_frm.add_custom_button(__('Set as Lost'),
-					cur_frm.cscript['Declare Order Lost']);
-			}
-		}
-
-		if (this.frm.doc.docstatus===0) {
-			cur_frm.add_custom_button(__('Opportunity'),
-				function() {
-					erpnext.utils.map_current_doc({
-						method: "erpnext.crm.doctype.opportunity.opportunity.make_quotation",
-						source_doctype: "Opportunity",
-						get_query_filters: {
-							status: ["not in", ["Lost", "Closed"]],
-							enquiry_type: cur_frm.doc.order_type,
-							customer: cur_frm.doc.customer || undefined,
-							lead: cur_frm.doc.lead || undefined,
-							company: cur_frm.doc.company
-						}
-					})
-				}, __("Get items from"), "btn-default");
-		}
-
-		this.toggle_reqd_lead_customer();
-
-	},
-
-	quotation_to: function() {
-		var me = this;
-		if (this.frm.doc.quotation_to == "Lead") {
-			this.frm.set_value("customer", null);
-			this.frm.set_value("contact_person", null);
-		} else if (this.frm.doc.quotation_to == "Customer") {
-			this.frm.set_value("lead", null);
-		}
-
-		this.toggle_reqd_lead_customer();
-	},
-
-	toggle_reqd_lead_customer: function() {
-		var me = this;
-
-		this.frm.toggle_reqd("lead", this.frm.doc.quotation_to == "Lead");
-		this.frm.toggle_reqd("customer", this.frm.doc.quotation_to == "Customer");
-
-		// to overwrite the customer_filter trigger from queries.js
-		$.each(["customer_address", "shipping_address_name"],
-			function(i, opts) {
-				me.frm.set_query(opts, me.frm.doc.quotation_to==="Lead"
-					? erpnext.queries["lead_filter"] : erpnext.queries["customer_filter"]);
-			}
-		);
-	},
-
-	tc_name: function() {
-		this.get_terms();
-	},
-
-	validate_company_and_party: function(party_field) {
-		if(!this.frm.doc.quotation_to) {
-			msgprint(__("Please select a value for {0} quotation_to {1}", [this.frm.doc.doctype, this.frm.doc.name]));
-			return false;
-		} else if (this.frm.doc.quotation_to == "Lead") {
-			return true;
-		} else {
-			return this._super(party_field);
-		}
-	},
-
-	lead: function() {
-		var me = this;
-		frappe.call({
-			method: "erpnext.crm.doctype.lead.lead.get_lead_details",
+	// 2016-12-02 - JDLP
+	// Actualise la valeur du texte options.
+	"qo_name": function(frm, cdt, cdn){
+		var soi = locals[cdt][cdn];
+		if (soi && soi.qo_name) {
+			frappe.call({
+			method: "frappe.client.get_value",
 			args: {
-				'lead': this.frm.doc.lead,
-				'posting_date': this.frm.doc.transaction_date,
-				'company': this.frm.doc.company,
-			},
-			callback: function(r) {
-				if(r.message) {
-					me.frm.updating_party_details = true;
-					me.frm.set_value(r.message);
-					me.frm.refresh();
-					me.frm.updating_party_details = false;
-
+				"doctype": "Quotation Options",
+				"fieldname": ["options"],
+				"filters": {
+					"name": soi.qo_name
 				}
-			}
-		})
+			},
+			callback: function(res) {
+				soi.options = res.message.options;
+				refresh_field("options");
+			}});
+		}
 	}
 });
 
-cur_frm.script_manager.make(erpnext.selling.QuotationController);
+frappe.ui.form.on("Quotation Item",{
+	"item_code": function(frm, cdt, cdn) {	
+		// 2016-09-17 - JDLP
+		// Lancer la fonction "ShowHideAttributes" quand l'item_code change.
+		ShowHideAttributes(false, frm, cdt, cdn, false, false), AssignDefaultValues(false, frm, cdt, cdn)
+	},
+	"create_variant": function(frm, cdt, cdn){
+		// 2016-10-17 - JDLP
+		// Lancer la fonction "CreateItemVariant"lorque le bouton "create_variant" est active.
+		CreateItemVariant(false, frm, cdt, cdn, false, false)
+	},
+	"reconfigure": function(doc, cdt, cdn) {
+		// 2016-11-01 - JDLP
+		// Lancer la fonction "ReconfigurerItemVariant" lorque le bouton "reconfigure" est active.
+		ReconfigurerItemVariant(false, doc, cdt, cdn)
+	}
+});
 
-cur_frm.fields_dict.lead.get_query = function(doc,cdt,cdn) {
-	return{	query: "erpnext.controllers.queries.lead_query" }
+
+///////////////////////////// FIN Handles /////////////////////////////
+
+////////////////////////////// Methodes ///////////////////////////////
+// 2016-10-24 - JDLP
+// Script fonctionnel
+// Permet d'assigner les valeurs par defaut
+function AssignDefaultValues(printDebug, frm, cdt, cdn) {
+    if (printDebug) console.log(__("AssignDefaultValues"));
+
+    var soi = locals[cdt][cdn];
+    if (soi && soi.item_code) {
+        	
+    }
+
+    if (printDebug) console.log(__("END AssignDefaultValues"));
 }
 
-cur_frm.cscript['Make Sales Order'] = function() {
-	frappe.model.open_mapped_doc({
-		method: "erpnext.selling.doctype.quotation.quotation.make_sales_order",
-		frm: cur_frm
-	})
-}
 
-cur_frm.cscript['Declare Order Lost'] = function(){
-	var dialog = new frappe.ui.Dialog({
-		title: "Set as Lost",
-		fields: [
-			{"fieldtype": "Text", "label": __("Reason for losing"), "fieldname": "reason",
-				"reqd": 1 },
-			{"fieldtype": "Button", "label": __("Update"), "fieldname": "update"},
-		]
-	});
-
-	dialog.fields_dict.update.$input.click(function() {
-		args = dialog.get_values();
-		if(!args) return;
-		return cur_frm.call({
-			method: "declare_order_lost",
-			doc: cur_frm.doc,
-			args: args.reason,
-			callback: function(r) {
-				if(r.exc) {
-					msgprint(__("There were errors."));
-					return;
-				}
-				dialog.hide();
-				cur_frm.refresh();
-			},
-			btn: this
-		})
-	});
-	dialog.show();
-
-}
-
-cur_frm.cscript.on_submit = function(doc, cdt, cdn) {
-	if(cint(frappe.boot.notification_settings.quotation))
-		cur_frm.email_doc(frappe.boot.notification_settings.quotation_message);
-}
-
-frappe.ui.form.on("Quotation Item", "items_on_form_rendered", function(frm, cdt, cdn) {
-	// enable tax_amount field if Actual
-})
-
-frappe.ui.form.on("Quotation Item", "stock_balance", function(frm, cdt, cdn) {
-	var d = frappe.model.get_doc(cdt, cdn);
-	frappe.route_options = {"item_code": d.item_code};
-	frappe.set_route("query-report", "Stock Balance");
-})
+//////////////////////////// Fin Methodes /////////////////////////////
+///////////////////////// FIN Code specifique /////////////////////////
+///////////////////////////////////////////////////////////////////////
