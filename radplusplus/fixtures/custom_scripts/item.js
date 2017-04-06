@@ -5,7 +5,7 @@
 
 frappe.ui.form.on("Item",{
 	"update_description": function(frm) {	
-		// 2016-03-28 - RENMAI - Mettre a jour les descriptions de l'item.
+		// 2016-03-28 - RENMAI - Mettre à jour les descriptions de l'item.
 		frappe.call({
 			"method": "radplusplus.radplusplus.controllers.item_variant.update_unique_description",
 			args: { 
