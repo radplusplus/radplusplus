@@ -16,12 +16,13 @@ cur_frm.add_fetch('sales_person','letter_head','letter_head')
 /////////////////////////////// Handles ///////////////////////////////
 frappe.ui.form.on("Sales Order",{
 	"onload": function(frm) {
-		// Lancer la fonction "LoadAttributesValues" au "onLoad" du formulaire parent.
-		LoadAttributesValues(false, frm, "items")
 		cur_frm.add_fetch("customer", "language", "language");
 	},
 	
 	"refresh": function(frm) {
+		// Lancer la fonction "LoadAttributesValues" au "onLoad" du formulaire parent.
+		LoadAttributesValues(false, frm, "items")
+		
 		cur_frm.add_fetch("customer", "language", "language");
 		
 		// Retrouver la valeur de language

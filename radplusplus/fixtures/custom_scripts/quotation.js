@@ -6,13 +6,11 @@
 cur_frm.add_fetch('sales_person','letter_head','letter_head')
 
 /////////////////////////////// Handles ///////////////////////////////
-frappe.ui.form.on("Quotation",{
-	"onload": function(frm) {		
+frappe.ui.form.on("Quotation",{	
+	"refresh": function(frm) {
 		// Lancer la fonction "LoadAttributesValues" au "onLoad" du formulaire parent.
 		LoadAttributesValues(false, frm, "items")
-	},
-	
-	"refresh": function(frm) {
+		
 		// RENMAI - 2017-04-05 - Gestion de la langue d'impression.
 		// Retrouver la valeur de language du client ou du prospect.
 		if (frm.doc.quotation_to == "Customer" && frm.doc.customer){
