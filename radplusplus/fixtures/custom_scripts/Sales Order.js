@@ -25,20 +25,22 @@ frappe.ui.form.on("Sales Order",{
 		cur_frm.add_fetch("customer", "language", "language");
 		
 		// Retrouver la valeur de language
-        frappe.call({
-            method: "frappe.client.get_value",
-            args: {
-                "doctype": "Customer",
-                "filters": {
-                    "name": frm.doc.customer
-                },
-                "fieldname": ["language"]
-            },
-            callback: function(res) {
-				cur_frm.set_value('language', res.message.language);
-				refresh_field("language");
-            }
-        });
+		if (frm.doc.customer){
+			frappe.call({
+				method: "frappe.client.get_value",
+				args: {
+					"doctype": "Customer",
+					"filters": {
+						"name": frm.doc.customer
+					},
+					"fieldname": ["language"]
+				},
+				callback: function(res) {
+					cur_frm.set_value('language', res.message.language);
+					refresh_field("language");
+				}
+			});
+		}
 	}
 });
 
