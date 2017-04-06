@@ -2,7 +2,7 @@
 /////////////////////////// Code specifique ///////////////////////////
 
 // 2017-02-28 - RENMAI
-// Permet d'assigner l'entete de lettre à la commande de vente selon le vendeur selectionne.
+// Permet d'assigner l'entete de lettre a la commande de vente selon le vendeur selectionne.
 cur_frm.add_fetch('sales_person','letter_head','letter_head')
 
 /////////////////////////////// Handles ///////////////////////////////
