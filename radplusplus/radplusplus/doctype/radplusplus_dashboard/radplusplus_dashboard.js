@@ -22,5 +22,23 @@ frappe.ui.form.on('Radplusplus Dashboard', {
 				});
 			}
 		, __("Select template"), __("Make"));
+	},
+	
+	test_batch: function(frm) {
+		frappe.prompt([{label:"Item", fieldtype:"Link", options:"Item", reqd: 1},
+						{label:"Customer", fieldtype:"Link", options:"Customer", reqd: 1}],
+			function(data) {
+				frappe.call({
+					method:"myrador.controllers.batch_radpp.create_batch_customer",
+					args: {						
+						customer: data.customer,
+						item: data.item
+					},
+					callback: function(r) {
+						msgprint(__("Result : " + r)); return;
+					}
+				});
+			}
+		, __("Select template"), __("Make"));
 	}
 });
