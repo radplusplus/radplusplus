@@ -93,12 +93,11 @@ fixtures = ["Custom Script"]
 # on_submit
 # on_cancel
 # on_update_after_submit
-# doc_events = {
-	# "Item": {
-		# "after_insert": "radplusplus.radplusplus.controllers.item_variant.item_after_insert",
-		# "before_save": "radplusplus.radplusplus.controllers.item_variant.item_before_save"
-	# }
-# }
+doc_events = {
+	"Production Order": {
+		"on_cancel": "radplusplus.radplusplus.controllers.manufacturing_controllers.on_cancel"
+	}
+}
 
 # Scheduled Tasks
 # ---------------
@@ -140,7 +139,8 @@ override_whitelisted_methods = {
 	"erpnext.stock.doctype.material_request.material_request.raise_production_orders" : "radplusplus.stock.doctype.material_request.material_request.raise_production_orders",
 	"erpnext.crm.doctype.lead.lead.get_lead_details" : "radplusplus.crm.doctype.lead.lead.get_lead_details",
 	"erpnext.crm.doctype.opportunity.opportunity.get_lead_details" : "radplusplus.crm.doctype.opportunity.opportunity.get_lead_details",
-	"erpnext.controllers.item_variant.create_variant" : "radplusplus.radplusplus.controllers.item_variant.create_variant"
+	"erpnext.controllers.item_variant.create_variant" : "radplusplus.radplusplus.controllers.item_variant.create_variant",
+	"erpnext.manufacturing.doctype.production_order.production_order.make_stock_entry":"radplusplus.radplusplus.controllers.manufacturing_controllers.make_stock_entry"
 	}
 #"erpnext.controllers.item_variant.get_variant" : "radplusplus.radplusplus.controllers.item_variant.get_variant"
 

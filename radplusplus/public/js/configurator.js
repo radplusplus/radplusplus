@@ -86,43 +86,43 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
             }
         });
         // Retrouver la valeur de configurator_of
-        frappe.call({
-            method: "frappe.client.get_value",
-            args: {
-                "doctype": "Item",
-                "filters": {
-                    "item_code": soi.item_code
-                },
-                "fieldname": ["configurator_of"]
-            },
-            callback: function(res) {
-                soi.configurator_of = res.message.configurator_of;
-            }
-        });
+		frappe.call({
+			method: "frappe.client.get_value",
+			args: {
+				"doctype": "Item",
+				"filters": {
+					"item_code": soi.item_code
+				},
+				"fieldname": ["configurator_of"]
+			},
+			callback: function(res) {
+				soi.configurator_of = res.message.configurator_of;
+			}
+		});
+	
+		if (soi.variant_of) soi.configurator_of = soi.variant_of;
+		if (soi.configurator_of) soi.variant_of = soi.configurator_of;
 
-        if (soi.variant_of) soi.configurator_of = soi.variant_of;
-        if (soi.configurator_of) soi.variant_of = soi.configurator_of;
+		//Retrouver les attribut qui s'appliquent
+		frappe.call({
+			method: "radplusplus.radplusplus.controllers.configurator.get_required_attributes_fields",
+			args: {"item_code": soi.item_code},
+			callback: function(res) {
+				if (printDebug) console.log(__("CALL BACK get_required_attributes_fields"));
+				//Convertir le message en Array
+				var attributes = (res.message || []);
 
-        //Retrouver les attribut qui s'appliquent
-        frappe.call({
-            method: "radplusplus.radplusplus.controllers.configurator.get_required_attributes_fields",
-            args: {"item_code": soi.item_code},
-            callback: function(res) {
-                if (printDebug) console.log(__("CALL BACK get_required_attributes_fields"));
-                //Convertir le message en Array
-                var attributes = (res.message || []);
+				if (printDebug) console.log(__("attributes:" + attributes));
+				//Pointeur sur grid
+				var grid = cur_frm.fields_dict["items"].grid;
 
-                if (printDebug) console.log(__("attributes:" + attributes));
-                //Pointeur sur grid
-                var grid = cur_frm.fields_dict["items"].grid;
+				//pour chaque field de type "show" le désactiver
+				for (var j = 0; j < grid.docfields.length; j++) {
+					var field = grid.docfields[j];
 
-                //pour chaque field de type "show" le désactiver
-                for (var j = 0; j < grid.docfields.length; j++) {
-                    var field = grid.docfields[j];
-
-                    // Si c'est un field du configurateur
+					// Si c'est un field du configurateur
 					// Et qu'il n'est pas dans la liste des attributs
-                    if (field.fieldtype == "Check" && field.fieldname.toLowerCase().startsWith("show"))
+					if (field.fieldtype == "Check" && field.fieldname.toLowerCase().startsWith("show"))
 					{
 						locals[cdt][cdn][field.fieldname] = 0;
 						var field_name = field.fieldname.toLowerCase().substring(4);
@@ -134,21 +134,21 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
 							}
 						}						
 					}
-                }
+				}
 
-                //si au moins un attribut, il s'agit d'un configurateur
-                locals[cdt][cdn]["has_configuration"] = attributes.length > 0;
+				//si au moins un attribut, il s'agit d'un configurateur
+				locals[cdt][cdn]["has_configuration"] = attributes.length > 0;
 
-                //Reloader les valeurs par défaut suite aux changements
-                if (reload_defaults)
-                    AssignDefaultValues(printDebug, frm, cdt, cdn);
+				//Reloader les valeurs par défaut suite aux changements
+				if (reload_defaults)
+					AssignDefaultValues(printDebug, frm, cdt, cdn);
 
-                if (refresh_items)
-                    refresh_field("items");
+				if (refresh_items)
+					refresh_field("items");
 
-                if (printDebug) console.log(__("CALL BACK get_required_attributes_fields END"));
-            }
-        });
+				if (printDebug) console.log(__("CALL BACK get_required_attributes_fields END"));
+			}
+		});
     }
 }
 

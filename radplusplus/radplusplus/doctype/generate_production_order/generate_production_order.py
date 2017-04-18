@@ -10,6 +10,7 @@ from frappe import msgprint, _
 from frappe.model.document import Document
 from erpnext.manufacturing.doctype.bom.bom import validate_bom_no
 from erpnext.manufacturing.doctype.production_order.production_order import get_item_details
+from radplusplus.radplusplus.controllers.manufacturing_controllers import set_production_order_materials_and_operations
 
 class GenerateProductionOrder(Document):
 	def __init__(self, arg1, arg2=None):
@@ -237,12 +238,13 @@ class GenerateProductionOrder(Document):
 		else :
 			msgprint(_("No Production Orders created"))
 			
-	# renmai - 2017-03-06 - ajout de "sales_order_item"		: d.sales_order_item,
+	# RENMAI - 2017-03-06 - ajout de "sales_order_item"		: d.sales_order_item,
 	def get_production_items(self):
 		item_dict = {}
 		for d in self.get("items"):
 			item_details= {
 				"production_item"		: d.item_code,
+				"customer"				: frappe.db.get_value("Sales Order", d.sales_order, "customer"),
 				"sales_order"			: d.sales_order,
 				"sales_order_item"		: d.sales_order_item,
 				"material_request"		: d.material_request,
@@ -251,6 +253,7 @@ class GenerateProductionOrder(Document):
 				"description"			: d.description,
 				"stock_uom"				: d.stock_uom,
 				"company"				: self.company,
+				"source_warehouse"		: frappe.db.get_single_value("Manufacturing Settings", "default_raw_material_warehouse"),
 				"wip_warehouse"			: "",
 				"fg_warehouse"			: d.warehouse,
 				"status"				: "Draft",
@@ -278,9 +281,8 @@ class GenerateProductionOrder(Document):
 		from erpnext.manufacturing.doctype.production_order.production_order import OverProductionError, get_default_warehouse
 		warehouse = get_default_warehouse()
 		pro = frappe.new_doc("Production Order")
-		msgprint(_("item_dict : " + str(item_dict)))
 		pro.update(item_dict)
-		pro.set_production_order_operations()
+		pro = set_production_order_materials_and_operations(pro.bom_no,pro)
 		if warehouse:
 			pro.wip_warehouse = warehouse.get('wip_warehouse')
 		if not pro.fg_warehouse:
