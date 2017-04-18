@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 import frappe
+import erpnext
 import frappe.defaults
 from frappe import msgprint, _
 from frappe.utils import cstr, flt, cint
@@ -10,9 +11,12 @@ from erpnext.stock.stock_ledger import update_entries_after
 from erpnext.controllers.stock_controller import StockController
 from erpnext.stock.utils import get_stock_balance
 from frappe.utils.xlsutils import get_xls
+import json
 
 class OpeningEntryAccountError(frappe.ValidationError): pass
 class EmptyStockReconciliationItemsError(frappe.ValidationError): pass
+
+print_debug = True
 
 class BatchStockReconciliation(StockController):
 	def __init__(self, arg1, arg2=None):
@@ -39,7 +43,7 @@ class BatchStockReconciliation(StockController):
 		self.make_gl_entries_on_cancel()
 
 	def remove_items_with_no_change(self):
-		frappe.errprint("remove_items_with_no_change")
+		frappe.msgprint("remove_items_with_no_change")
 		"""Remove items if qty or rate is not changed"""
 		self.difference_amount = 0.0
 		def _changed(item):			
@@ -78,7 +82,7 @@ class BatchStockReconciliation(StockController):
 			frappe.msgprint(_("Removed items with no change in quantity or value."))
 
 	def validate_data(self):
-		frappe.errprint("validate_data")
+		frappe.msgprint("validate_data")
 		def _get_msg(row_num, msg):
 			return _("Row # {0}: ").format(row_num+1) + msg
 
@@ -178,7 +182,7 @@ class BatchStockReconciliation(StockController):
 			self.validation_messages.append(_("Row # ") + ("%d: " % (row_num)) + cstr(e))
 
 	def update_stock_ledger(self):
-		frappe.errprint("update_stock_ledger")
+		frappe.msgprint("update_stock_ledger")
 		"""	find difference between current and expected entries
 			and create stock ledger entries based on the difference"""
 		from erpnext.stock.stock_ledger import get_previous_sle
@@ -219,9 +223,21 @@ class BatchStockReconciliation(StockController):
 					balance_rate = previous_sle.get("valuation_rate", 0)
 				previous_qty = get_item_warehouse_batch_actual_qty(row.item_code, row.warehouse, row.batch_no, self.posting_date, self.posting_time)
 				
+				
+				
+				if print_debug: frappe.msgprint("balance_qty: " + cstr(balance_qty))
+				if print_debug: frappe.msgprint("balance_rate: " + cstr(balance_rate))
+				if print_debug: frappe.msgprint("previous_qty: " + cstr(previous_qty))
+				
 				row.qty = row.qty - previous_qty
 				row.qty_after_transaction = balance_qty + row.qty
-				row.valuation_rate = ((balance_qty*balance_rate)+(row.qty*row.valuation_rate))/(balance_qty+row.qty)
+				
+				if print_debug: frappe.msgprint("row.qty: " + cstr(row.qty))
+				if print_debug: frappe.msgprint("row.qty_after_transaction: " + cstr(row.qty_after_transaction))
+				
+				row.valuation_rate = flt(((balance_qty*balance_rate)+(row.qty*row.valuation_rate))/(balance_qty+row.qty))
+				
+				if print_debug: frappe.msgprint("row.valuation_rate: " + cstr(row.valuation_rate))
 				
 				if row.qty and not row.valuation_rate:
 					frappe.throw(_("Valuation Rate required for Item in row {0}").format(row.idx))
@@ -231,6 +247,7 @@ class BatchStockReconciliation(StockController):
 					or (not previous_sle and not row.qty_after_transaction)):
 						continue
 
+			if print_debug: frappe.msgprint("row: " + cstr(row))
 			self.insert_entries(row)
 
 	def insert_entries(self, row):
@@ -251,10 +268,98 @@ class BatchStockReconciliation(StockController):
 			"valuation_rate": row.valuation_rate,
 			"batch_no": row.batch_no #JDLP - 2017-01-30 - batch_no
 		})
-		frappe.errprint("sle: " + cstr(args))
+		if print_debug: frappe.msgprint("sle: " + cstr(args))
 		#frappe.throw(_("sle {0}").format(cstr(args)))
 		self.make_sl_entries([args])
 
+	#JDLP - 2017-04-18 Methode copie de Stock_ledger
+	#non utilise
+	def radpp_make_sl_entries(self, sl_entries, is_amended=None, allow_negative_stock=False, via_landed_cost_voucher=False):
+		frappe.msgprint("radpp_make_sl_entries: ")
+		if sl_entries:
+			frappe.msgprint("sl_entries: ")
+			from erpnext.stock.utils import update_bin
+			from erpnext.stock.stock_ledger import make_entry, set_as_cancel, delete_cancelled_entry
+
+			cancel = True if sl_entries[0].get("is_cancelled") == "Yes" else False
+			if cancel:
+				frappe.msgprint("cancel1: ")
+				set_as_cancel(sl_entries[0].get('voucher_no'), sl_entries[0].get('voucher_type'))
+
+			for sle in sl_entries:
+				sle_id = None
+				frappe.msgprint("actual_qty: " + cstr(sle['actual_qty']))
+				if sle.get('is_cancelled') == 'Yes':
+					sle['actual_qty'] = -flt(sle['actual_qty'])
+				frappe.msgprint("actual_qty: " + cstr(sle['actual_qty']))
+
+				#if sle.get("actual_qty") or sle.get("voucher_type")=="Batch Stock Reconciliation":
+				#	frappe.msgprint("make_entry: ")
+				sle_id = self.radpp_make_entry(sle, allow_negative_stock, via_landed_cost_voucher)
+
+				args = sle.copy()
+				args.update({
+					"sle_id": sle_id,
+					"is_amended": is_amended
+				})
+				update_bin(args, allow_negative_stock, via_landed_cost_voucher)
+
+			if cancel:
+				frappe.msgprint("cancel2: ")
+				delete_cancelled_entry(sl_entries[0].get('voucher_type'), sl_entries[0].get('voucher_no'))
+
+	#JDLP - 2017-04-18 Methode copie de Stock_ledger
+	#non utilise
+	def radpp_make_entry(self, args, allow_negative_stock=False, via_landed_cost_voucher=False):
+		args.update({"doctype": "Stock Ledger Entry"})
+	
+		sle = frappe.get_doc(args)
+		sle.flags.ignore_permissions = 1
+		sle.allow_negative_stock=allow_negative_stock
+		sle.via_landed_cost_voucher = via_landed_cost_voucher
+		sle.valuation_rate = flt(sle.valuation_rate)
+		sle.insert()
+		
+		parent = frappe.get_doc(sle.voucher_type,sle.voucher_no)
+		
+		frappe.msgprint("posting_date: " + cstr(parent.posting_date))
+		frappe.msgprint("posting_time: " + cstr(parent.posting_time))
+		
+		# assert
+		previous_sle_args = {
+			"item_code": sle.item_code,
+			"warehouse": sle.warehouse,
+			"posting_date": parent.posting_date,
+			"posting_time": parent.posting_time,
+			"sle": sle.name
+		}
+		from erpnext.stock.stock_ledger import get_previous_sle
+		previous_sle = get_previous_sle(previous_sle_args)
+		frappe.msgprint("previous_sle: " + cstr(previous_sle))
+		prev_stock_value = (previous_sle.stock_value or 0.0) if previous_sle else 0.0
+		sle.valuation_rate = args['valuation_rate']
+		sle.qty_after_transaction = args['qty_after_transaction']
+		sle.stock_queue = [[sle.qty_after_transaction, sle.valuation_rate]]
+		sle.stock_value = flt(sle.qty_after_transaction) * flt(sle.valuation_rate)
+			
+		# rounding as per precision
+		sle.stock_value = flt(sle.stock_value, sle.precision)
+
+		stock_value_difference = sle.stock_value - prev_stock_value
+		sle.prev_stock_value = sle.stock_value
+
+		# update current sle
+		sle.stock_queue = json.dumps(sle.stock_queue)
+		sle.stock_value_difference = stock_value_difference
+		frappe.msgprint("valuation_rate: " + cstr(sle.valuation_rate))
+		frappe.get_doc(sle).db_update()	
+		frappe.msgprint("valuation_rate: " + cstr(sle.valuation_rate))	
+		sle.save()
+		frappe.msgprint("valuation_rate: " + cstr(sle.valuation_rate))	
+		sle.submit()
+		frappe.msgprint("valuation_rate: " + cstr(sle.valuation_rate))
+		return sle.name
+	
 	def delete_and_repost_sle(self):
 		"""	Delete Stock Ledger Entries related to this voucher
 			and repost future Stock Ledger Entries"""
@@ -419,7 +524,7 @@ def get_item_warehouse_batch_actual_qty(item_code, warehouse, batch_no, posting_
 		actual_qty = actual_qty[0][0]
 	else:
 		actual_qty = 0
-	frappe.errprint("actual_qty: " + cstr(actual_qty))
+	frappe.msgprint("actual_qty: " + cstr(actual_qty))
 	return actual_qty
 
 def get_columns():
