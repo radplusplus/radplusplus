@@ -4,34 +4,10 @@
 /////////////////////////////// Handles ///////////////////////////////
 
 frappe.ui.form.on("Purchase Order",{
-	"onload":  function(frm) {
-		// 2016-10-17 - JDLP
-		// Lancer la fonction "LoadAttributesValues" au "onLoad" du formulaire parent.
-		cur_frm.set_value("letter_head", "Myrador - ERPNext");
-		cur_frm.set_value("tc_name", "Bon d'achat"); 
-		cur_frm.set_value("ship_to_address", "FOB Myrador");
-	},
-	
 	"refresh":  function(frm) {
 		// 2016-10-17 - JDLP
 		// Lancer la fonction "refresh" au "onLoad" du formulaire parent.
 		LoadAttributesValues(false, frm, "items")
-	},
-	
-	"ship_to_address": function(frm, cdt, cdn) {
-		// 2017-01-25 - RENMAI
-		// Permet d'assigner la description complete de l'adresse de livraison
-		return frm.call({
-			method: "frappe.geo.doctype.address.address.get_address_display",
-			args: {
-				"address_dict": frm.doc.ship_to_address
-			},
-			callback: function(r) {
-				console.log(__(r.message));
-				if(r.message)
-					frappe.model.set_value(cdt,cdn,"ship_to_address_display", r.message);
-			}
-		});
 	}
 });
 
