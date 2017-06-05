@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 
 ///////////////////////////////////////////////////////////////////////
-/////////////////////////// Code spécifique ///////////////////////////
+/////////////////////////// Code specifique ///////////////////////////
 /////////////////////////////// Handles ///////////////////////////////
 	
 frappe.ui.form.on("Stock Entry",{
@@ -92,7 +92,7 @@ frappe.ui.form.on("Stock Entry Detail",{
 			console.log('1\' to 7\'')
 			refresh_field("items");
 		}
-		if (row.construction.toString().substring(0,10) == "Ingénierie" ){
+		if (row.construction.toString().substring(0,10) == "Ingenierie" ){
 			row.thickness = __('5/8"');
 			row.length = "1' à 8'";
 			console.log("1' à 8'")
@@ -248,11 +248,11 @@ frappe.ui.form.on("Stock Entry Detail",{
 
 ///////////////////////////// FIN Handles /////////////////////////////
 
-////////////////////////////// Méthodes ///////////////////////////////
+////////////////////////////// Methodes ///////////////////////////////
 
 // 2016-10-24 - JDLP
 // Script fonctionnel
-// Permet d'assigner les valeurs par défaut
+// Permet d'assigner les valeurs par defaut
 // Ce script doit etre present dans tous les doc utilisant le configurateur
 function AssignDefaultValues(printDebug, frm, cdt, cdn) {
     if (printDebug) console.log(__("AssignDefaultValues"));
@@ -267,7 +267,7 @@ function AssignDefaultValues(printDebug, frm, cdt, cdn) {
 }
 
 // 2016-11-22 - JDLP
-// J'ai déplacé le code de "erpnext\stock\doctype\stock_entry\stock_entry.js" "cur_frm.cscript.item_code"
+// J'ai deplace le code de "erpnext\stock\doctype\stock_entry\stock_entry.js" "cur_frm.cscript.item_code"
 // Ceci rentrait en conflit avec le configurateur
 function StockEntryDetailOnItemChange(printDebug, frm, cdt, cdn){
 	if (printDebug) console.log(__("StockEntryDetailOnItemChange"));
@@ -300,6 +300,6 @@ function StockEntryDetailOnItemChange(printDebug, frm, cdt, cdn){
 		});
 	}	
 }
-//////////////////////////// Fin Méthodes /////////////////////////////
-///////////////////////// FIN Code spécifique /////////////////////////
+//////////////////////////// Fin Methodes /////////////////////////////
+///////////////////////// FIN Code specifique /////////////////////////
 ///////////////////////////////////////////////////////////////////////
