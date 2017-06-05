@@ -143,7 +143,7 @@ def make_variant_description(variant):
 # 2016-08-23 Ajoute par Antonio pour creer et faire le submit 
 @frappe.whitelist()
 def create_variant_and_submit(template_item_code, args):
-	print_debug = True
+	print_debug = False
 	if print_debug: frappe.errprint("--- create_variant_and_submit ---")
 	
 	start_time = time.time()

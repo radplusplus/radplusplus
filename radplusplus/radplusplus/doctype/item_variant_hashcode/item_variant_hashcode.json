@@ -7,7 +7,7 @@
  "custom": 0, 
  "docstatus": 0, 
  "doctype": "DocType", 
- "document_type": "Other", 
+ "document_type": "Document", 
  "editable_grid": 1, 
  "engine": "InnoDB", 
  "fields": [
@@ -79,7 +79,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2017-04-20 14:22:41.854278", 
+ "modified": "2017-04-20 14:30:48.099665", 
  "modified_by": "Administrator", 
  "module": "RADplusplus", 
  "name": "Item Variant HashCode", 
