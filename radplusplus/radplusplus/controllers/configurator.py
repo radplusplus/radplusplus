@@ -33,15 +33,15 @@ def get_required_attributes_fields(item_code):
 	args = {'item_code': item_code}
 	query = frappe.db.sql("""
 			SELECT
-				`tabItem Attribute`.`name`,
-				`tabItem Attribute`.`field_name`
+				`tabItem Attribute`.`field_name`,
+				`tabItem Attribute`.`name`				
 			FROM tabItem AS t1
 				INNER JOIN tabItem AS t2 ON t1.configurator_of = t2.`name`
 				INNER JOIN `tabItem Variant Attribute` ON t2.`name` = `tabItem Variant Attribute`.parent
 				INNER JOIN `tabItem Attribute` ON `tabItem Variant Attribute`.attribute = `tabItem Attribute`.`name`
 			WHERE
 				t1.`name` = %(item_code)s AND
-				t1.has_configuration = 1""", args, as_list = 1)
+				t1.has_configuration = 1""", args, as_dict = 1)
 	
 	return query
 	

@@ -66,7 +66,7 @@ function LoadAttributesValues(printDebug, frm, child_field_name) {
 // 		Isolation dans une fonction
 // 2016-10-26 - JDLP :
 //		Modifications majeures pour utiliser un call en pyhton
-function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_items, milling) {
+function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_items) {
     if (printDebug) console.log(__("ShowHideAttributes*****************************"));
 
     //Si un code à été saisit
@@ -82,23 +82,43 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
 			callback: function(res) {
 				if (printDebug) console.log(__("CALL BACK get_required_attributes_fields"));
 				//Convertir le message en Array
-				var attributes = (res.message || []);
-
-				if (printDebug) console.log(__("attributes:" + attributes));
+				var attributes = (res.message || {});
+				
+				var attributes = {};
+				for (var i = 0, len = res.message.length; i < len; i++) {
+					attributes[res.message[i].field_name] = res.message[i];
+				}
+				
+				if (printDebug) console.log(__("attributes ---- >" ));				
+				if (printDebug) console.log(__(attributes));
+				if (printDebug) console.log(__("< ---- attributes" ));	
+				
 				//Pointeur sur grid
 				var grid = cur_frm.fields_dict["items"].grid;
 	
 				if (printDebug) console.log(__("grid.docfields.length:" + grid.docfields.length));
-				//pour chaque field de type "show" le désactiver
-				for (var j = 0; j < grid.docfields.length; j++) {
-					if (printDebug) console.log(__("docfield:" + grid.docfields[j]));
-					var field = grid.docfields[j];
-
+				
+				$.each(grid.docfields, function(i, field) {
+					//debugger;
+					if (printDebug) console.log(__("field:***"));
+					if (printDebug) console.log(__(field));
+					
+					if (printDebug) console.log(__("field.name :" + field.name ));
+					if (printDebug) console.log(__("field.field_name :" + field.fieldname ));
+					
 					// Si c'est un field du configurateur
 					// Et qu'il n'est pas dans la liste des attributs
 					if (field.fieldtype == "Check" && field.fieldname.toLowerCase().startsWith("show"))
 					{
 						locals[cdt][cdn][field.fieldname] = 0;
+						var field_name = field.fieldname.toLowerCase().substring(4);
+						
+						if (typeof attributes[field_name] !== 'undefined'){
+							//if (printDebug) console.log(__("field.fieldname :" + field.fieldname ));
+							locals[cdt][cdn][field.fieldname] = 1;
+						}
+						
+						/* locals[cdt][cdn][field.fieldname] = 0;
 						var field_name = field.fieldname.toLowerCase().substring(4);
 						for (var k = 0; k < attributes.length; k++) {
 							if (attributes[k][1] == field_name)
@@ -106,21 +126,13 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
 								locals[cdt][cdn][field.fieldname] = 1;
 								break;
 							}
-						}
+						} */
 					}
-				}
+				});
 
 				//Reloader les valeurs par défaut suite aux changements
 				if (reload_defaults)
 					AssignDefaultValues(printDebug, frm, cdt, cdn);
-				
-				if (milling){
-					if (printDebug) console.log(__("milling :" + milling));
-					frappe.model.set_value(soi.doctype, soi.name, "milling", milling);
-				}
-				else{
-					frappe.model.set_value(soi.doctype, soi.name, "milling", "Standard Myrador");
-				}
 
 				if (refresh_items)
 					refresh_field("items");
@@ -284,8 +296,9 @@ function CreateItemVariant(printDebug, frm, cdt, cdn, validate_attributes, refre
             args: {
                 "item_code": soi.template
             },
-            callback: function(res) {
-                if (printDebug) console.log(__("CALL BACK get_required_attributes_fields"));
+            callback: function(res) {							
+				
+				if (printDebug) console.log(__("CALL BACK get_required_attributes_fields"));
                 //Convertir le message en Array
                 var attributes = (res.message || []);
                 var variantAttributes = {};
@@ -293,13 +306,15 @@ function CreateItemVariant(printDebug, frm, cdt, cdn, validate_attributes, refre
                 //pour chaque attribut
                 for (var j = 0; j < attributes.length; j++) {
                     if (printDebug) console.log(__(attributes[j]));
-                    var attribute_name = attributes[j][0];
-                    var fieldname = attributes[j][1];
+                    var attribute_name = attributes[j].name;
+                    var fieldname = attributes[j].field_name;
+                    if (printDebug) console.log(__("fieldname : " + fieldname));
+                    if (printDebug) console.log(__("attribute_name : " + attribute_name));
 
-                    var currItem = soi[fieldname];
+                    var currItem = soi[attributes[j].field_name];
 					if (currItem != undefined)
 					{
-						var idx = frm.cur_grid.grid_form.fields_dict[fieldname].df.idx;
+						var idx = frm.cur_grid.grid_form.fields_dict[attributes[j].field_name].df.idx;
 						var options = frm.cur_grid.grid_form.fields[idx - 1].options;
 						for (var o = 0; o < options.length; o++) {
 							if (options[o].value == currItem) {
@@ -314,7 +329,7 @@ function CreateItemVariant(printDebug, frm, cdt, cdn, validate_attributes, refre
                         frappe.throw(__("Tous les attributs doivent être définis."));
 
                     //Ajouter la valuer dans la liste d'attributs								
-                    variantAttributes[attribute_name] = currItem;
+                    variantAttributes[attributes[j].name] = currItem;
                 }
 
                 //Lancer la création du variant
