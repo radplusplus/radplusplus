@@ -16,7 +16,7 @@ print_debug = True
 
 @frappe.whitelist()
 def get_configurator_attributes_values(user_name):
-	frappe.errprint("get_configurator_attributes_values")
+	if print_debug: frappe.errprint("get_configurator_attributes_values")
 	if print_debug: frappe.errprint("get_configurator_attributes_values")
 	if print_debug: frappe.errprint("user:" + user_name)
 	lang = get_user_lang(user_name)
@@ -33,15 +33,15 @@ def get_required_attributes_fields(item_code):
 	args = {'item_code': item_code}
 	query = frappe.db.sql("""
 			SELECT
-				`tabItem Attribute`.`name`,
-				`tabItem Attribute`.`field_name`
+				`tabItem Attribute`.`field_name`,
+				`tabItem Attribute`.`name`				
 			FROM tabItem AS t1
 				INNER JOIN tabItem AS t2 ON t1.configurator_of = t2.`name`
 				INNER JOIN `tabItem Variant Attribute` ON t2.`name` = `tabItem Variant Attribute`.parent
 				INNER JOIN `tabItem Attribute` ON `tabItem Variant Attribute`.attribute = `tabItem Attribute`.`name`
 			WHERE
 				t1.`name` = %(item_code)s AND
-				t1.has_configuration = 1""", args, as_list = 1)
+				t1.has_configuration = 1""", args, as_dict = 1)
 	
 	return query
 	
@@ -60,14 +60,27 @@ def get_item_variant_attributes_values(user_name, item_code):
 			ORDER BY
 			`tabItem Variant Attribute`.idx ASC""", args, as_list = 1)
 	update_user_translations(get_user_lang(user_name))
-	frappe.errprint("query:" + cstr(query))
+	if print_debug: frappe.errprint("query:" + cstr(query))
 	rows = []
 	for q in query:
 		rows.append((q[0],_(q[1])))
 	
-	frappe.errprint("rows:" + cstr(rows))
+	if print_debug: frappe.errprint("rows:" + cstr(rows))
 	return rows
 	
+@frappe.whitelist()
+def get_attributes_values(attribute):
+	args = {'attribute': attribute}
+	query = frappe.db.sql("""
+			SELECT
+			`tabItem Attribute Value`.parent,
+			`tabItem Attribute Value`.attribute_value
+			FROM
+			`tabItem Attribute Value`
+			WHERE
+			`tabItem Attribute Value`.parent = %(attribute)s""", args, as_list = 1)
+	
+	return query
 	
 def get_user_lang(user_name):
 	lang = frappe.db.get_value("User", user_name, "language")
@@ -103,6 +116,7 @@ def update_user_translations(lang):
 		frappe.local.lang_full_dict.update(out)
 		out[key] = lang
 
+@frappe.whitelist()
 def get_configurator_attributes():
 	query = frappe.db.sql("""
 	SELECT

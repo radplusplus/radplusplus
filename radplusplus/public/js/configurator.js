@@ -26,11 +26,15 @@ function LoadAttributesValues(printDebug, frm, child_field_name) {
             if (printDebug) console.log(__("rows :" + rows));
 			for (var key in dictionary) {
 				
+				if (printDebug) console.log(__("key : " + key ));
+				if (printDebug) console.log(__("cur_frm.fields_dict[child_field_name].grid.fields_map[key]  : " + cur_frm.fields_dict[child_field_name].grid.fields_map[key]  ));
+				
+				if (typeof cur_frm.fields_dict[child_field_name].grid.fields_map[key] === 'undefined') continue;
+				
 				var field = cur_frm.fields_dict[child_field_name].grid.fields_map[key];
 				if (field.fieldtype != "Select") continue;
 				
 				// do something with key
-				if (printDebug) console.log(__(key + ":" ));
 				values = dictionary[key];
 				
 				//Construire les options
@@ -66,10 +70,149 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
     if (printDebug) console.log(__("ShowHideAttributes*****************************"));
 
     //Si un code à été saisit
-    if (locals[cdt][cdn] && locals[cdt][cdn].item_code) {
+    if (locals[cdt][cdn] && locals[cdt][cdn].template) {
 
         var soi = locals[cdt][cdn];
-        if (printDebug) console.log(__("soi:" + soi.item_code));
+        if (printDebug) console.log(__("soi:" + soi.template));
+		
+		//Retrouver les attribut qui s'appliquent
+		frappe.call({
+			method: "radplusplus.radplusplus.controllers.configurator.get_required_attributes_fields",
+			args: {"item_code": soi.template},
+			callback: function(res) {
+				if (printDebug) console.log(__("CALL BACK get_required_attributes_fields"));
+				//Convertir le message en Array
+				var attributes = (res.message || {});
+				
+				var attributes = {};
+				for (var i = 0, len = res.message.length; i < len; i++) {
+					attributes[res.message[i].field_name] = res.message[i];
+				}
+				
+				if (printDebug) console.log(__("attributes ---- >" ));				
+				if (printDebug) console.log(__(attributes));
+				if (printDebug) console.log(__("< ---- attributes" ));	
+				
+				//Pointeur sur grid
+				var grid = cur_frm.fields_dict["items"].grid;
+	
+				if (printDebug) console.log(__("grid.docfields.length:" + grid.docfields.length));
+				
+				$.each(grid.docfields, function(i, field) {
+					//debugger;
+					if (printDebug) console.log(__("field:***"));
+					if (printDebug) console.log(__(field));
+					
+					if (printDebug) console.log(__("field.name :" + field.name ));
+					if (printDebug) console.log(__("field.field_name :" + field.fieldname ));
+					
+					// Si c'est un field du configurateur
+					// Et qu'il n'est pas dans la liste des attributs
+					if (field.fieldtype == "Check" && field.fieldname.toLowerCase().startsWith("show"))
+					{
+						locals[cdt][cdn][field.fieldname] = 0;
+						var field_name = field.fieldname.toLowerCase().substring(4);
+						
+						if (typeof attributes[field_name] !== 'undefined'){
+							//if (printDebug) console.log(__("field.fieldname :" + field.fieldname ));
+							locals[cdt][cdn][field.fieldname] = 1;
+						}
+						
+						/* locals[cdt][cdn][field.fieldname] = 0;
+						var field_name = field.fieldname.toLowerCase().substring(4);
+						for (var k = 0; k < attributes.length; k++) {
+							if (attributes[k][1] == field_name)
+							{
+								locals[cdt][cdn][field.fieldname] = 1;
+								break;
+							}
+						} */
+					}
+				});
+
+				//Reloader les valeurs par défaut suite aux changements
+				if (reload_defaults)
+					AssignDefaultValues(printDebug, frm, cdt, cdn);
+
+				if (refresh_items)
+					refresh_field("items");
+
+				if (printDebug) console.log(__("CALL BACK get_required_attributes_fields END"));
+			}
+		});
+    }
+}
+
+function set_milling_if_different(cdt, cdn, fieldname, value) {
+	var changed = false;
+	var row = locals[cdt][cdn];
+	if (row[fieldname] != value) {
+		frappe.model.set_value(row.doctype, row.name, fieldname, value);
+		changed = true;
+	}				
+}
+	
+// 2016-08-29 - JDLP
+// Permet d'afficher ou non les attributs configurables en fonction de "configurator_of"
+// 2016-09-17 - JDLP :
+//		Adaptation pour frappe V 7
+// 		Isolation dans une fonction
+// 2016-10-26 - JDLP :
+//		Modifications majeures pour utiliser un call en pyhton
+function SetConfiguratorOf(printDebug, frm, cdt, cdn) {
+    if (printDebug) console.log(__("SetConfiguratorOf*****************************"));
+	
+	var soi = locals[cdt][cdn];
+	
+    //Si un code à été saisit
+    if (locals[cdt][cdn] && locals[cdt][cdn].template) {
+		if (printDebug) console.log(__("SetConfiguratorOf avec template"));
+        if (printDebug) console.log(__("soi:" + soi.template));
+		
+        // Retrouver la valeur de configurator_of
+		frappe.call({
+			method: "frappe.client.get_value",
+			args: {
+				"doctype": "Item",
+				"filters": {
+					"item_code": soi.template
+				},
+				"fieldname": ["configurator_of"]
+			},
+			callback: function(res) {
+				if (printDebug) console.log(__("res.message.configurator_of:" + res.message.configurator_of));
+				var grid_row = cur_frm.open_grid_row();
+				frappe.model.set_value(soi.doctype, soi.name, "configurator_of", res.message.configurator_of);
+				frappe.model.set_value(soi.doctype, soi.name, "has_configuration", 1);
+				refresh_field("items");
+			}
+		});
+    }
+	else{
+		if (printDebug) console.log(__("SetConfiguratorOf sans template"));
+		var grid_row = cur_frm.open_grid_row();
+		grid_row.grid_form.fields_dict.configurator_of.set_value("");
+		frappe.model.set_value(soi.doctype, soi.name, "has_configuration", 0);
+		refresh_field("items");
+	}
+}
+
+/* // 2016-08-29 - JDLP
+// Permet d'afficher ou non les attributs configurables en fonction de "configurator_of"
+// 2016-09-17 - JDLP :
+//		Adaptation pour frappe V 7
+// 		Isolation dans une fonction
+// 2016-10-26 - JDLP :
+//		Modifications majeures pour utiliser un call en pyhton
+function SetVariantOf(printDebug, cdt, cdn) {
+    if (printDebug) console.log(__("SetVariantOf*****************************"));
+
+	var soi = locals[cdt][cdn];
+	
+    //Si un code à été saisit
+    if (locals[cdt][cdn] && locals[cdt][cdn].item_code) {
+		if (printDebug) console.log(__("SetVariantOf avec template"));
+        if (printDebug) console.log(__("soi.item_code:" + soi.item_code));
 		
         // Retrouver la valeur de variant_of
         frappe.call({
@@ -81,76 +224,22 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
                 },
                 "fieldname": ["variant_of"]
             },
-            callback: function(res) {
-                soi.variant_of = res.message.variant_of;
-            }
-        });
-        // Retrouver la valeur de configurator_of
-        frappe.call({
-            method: "frappe.client.get_value",
-            args: {
-                "doctype": "Item",
-                "filters": {
-                    "item_code": soi.item_code
-                },
-                "fieldname": ["configurator_of"]
-            },
-            callback: function(res) {
-                soi.configurator_of = res.message.configurator_of;
-            }
-        });
-
-        if (soi.variant_of) soi.configurator_of = soi.variant_of;
-        if (soi.configurator_of) soi.variant_of = soi.configurator_of;
-
-        //Retrouver les attribut qui s'appliquent
-        frappe.call({
-            method: "radplusplus.radplusplus.controllers.configurator.get_required_attributes_fields",
-            args: {"item_code": soi.item_code},
-            callback: function(res) {
-                if (printDebug) console.log(__("CALL BACK get_required_attributes_fields"));
-                //Convertir le message en Array
-                var attributes = (res.message || []);
-
-                if (printDebug) console.log(__("attributes:" + attributes));
-                //Pointeur sur grid
-                var grid = cur_frm.fields_dict["items"].grid;
-
-                //pour chaque field de type "show" le désactiver
-                for (var j = 0; j < grid.docfields.length; j++) {
-                    var field = grid.docfields[j];
-
-                    // Si c'est un field du configurateur
-					// Et qu'il n'est pas dans la liste des attributs
-                    if (field.fieldtype == "Check" && field.fieldname.toLowerCase().startsWith("show"))
-					{
-						locals[cdt][cdn][field.fieldname] = 0;
-						var field_name = field.fieldname.toLowerCase().substring(4);
-						for (var k = 0; k < attributes.length; k++) {
-							if (attributes[k][1] == field_name)
-							{
-								locals[cdt][cdn][field.fieldname] = 1;
-								break;
-							}
-						}						
-					}
-                }
-
-                //si au moins un attribut, il s'agit d'un configurateur
-                locals[cdt][cdn]["has_configuration"] = attributes.length > 0;
-
-                //Reloader les valeurs par défaut suite aux changements
-                if (reload_defaults)
-                    AssignDefaultValues(printDebug, frm, cdt, cdn);
-
-                if (refresh_items)
-                    refresh_field("items");
-
-                if (printDebug) console.log(__("CALL BACK get_required_attributes_fields END"));
+            callback: function(res) {				
+				if (printDebug) console.log(__("res.message.variant_of:" + res.message.variant_of));				
+				frappe.model.set_value(soi.doctype, soi.name, "variant_of", res.message.variant_of);
+				/* var grid_row = cur_frm.open_grid_row();
+				grid_row.grid_form.fields_dict.variant_of.set_value(res.message.variant_of); 
+				refresh_field("items");
             }
         });
     }
-}
+	else{
+		if (printDebug) console.log(__("SetVariantOf sans item code"));
+		var grid_row = cur_frm.open_grid_row();
+		grid_row.grid_form.fields_dict.variant_of.set_value("");
+		refresh_field("items");
+	}
+} */
 
 // 2016-12-17 - RM
 // Permet d'afficher la description formatée de l'item selon la langue du document en cours
@@ -196,19 +285,20 @@ function CreateItemVariant(printDebug, frm, cdt, cdn, validate_attributes, refre
     if (printDebug) console.log(__("CreateItemVariant"));
 
     //Si un code à été saisit
-    if (locals[cdt][cdn] && locals[cdt][cdn].item_code) {
+    if (locals[cdt][cdn] && locals[cdt][cdn].template) {
 
         var soi = locals[cdt][cdn];
-        if (printDebug) console.log(__("soi:" + soi.item_code));
+        if (printDebug) console.log(__("soi.template:" + soi.template));
 
         //Lancer le call
         frappe.call({
             method: "radplusplus.radplusplus.controllers.configurator.get_required_attributes_fields",
             args: {
-                "item_code": soi.item_code
+                "item_code": soi.template
             },
-            callback: function(res) {
-                if (printDebug) console.log(__("CALL BACK get_required_attributes_fields"));
+            callback: function(res) {							
+				
+				if (printDebug) console.log(__("CALL BACK get_required_attributes_fields"));
                 //Convertir le message en Array
                 var attributes = (res.message || []);
                 var variantAttributes = {};
@@ -216,13 +306,15 @@ function CreateItemVariant(printDebug, frm, cdt, cdn, validate_attributes, refre
                 //pour chaque attribut
                 for (var j = 0; j < attributes.length; j++) {
                     if (printDebug) console.log(__(attributes[j]));
-                    var attribute_name = attributes[j][0];
-                    var fieldname = attributes[j][1];
+                    var attribute_name = attributes[j].name;
+                    var fieldname = attributes[j].field_name;
+                    if (printDebug) console.log(__("fieldname : " + fieldname));
+                    if (printDebug) console.log(__("attribute_name : " + attribute_name));
 
-                    var currItem = soi[fieldname];
+                    var currItem = soi[attributes[j].field_name];
 					if (currItem != undefined)
 					{
-						var idx = frm.cur_grid.grid_form.fields_dict[fieldname].df.idx;
+						var idx = frm.cur_grid.grid_form.fields_dict[attributes[j].field_name].df.idx;
 						var options = frm.cur_grid.grid_form.fields[idx - 1].options;
 						for (var o = 0; o < options.length; o++) {
 							if (options[o].value == currItem) {
@@ -237,7 +329,7 @@ function CreateItemVariant(printDebug, frm, cdt, cdn, validate_attributes, refre
                         frappe.throw(__("Tous les attributs doivent être définis."));
 
                     //Ajouter la valuer dans la liste d'attributs								
-                    variantAttributes[attribute_name] = currItem;
+                    variantAttributes[attributes[j].name] = currItem;
                 }
 
                 //Lancer la création du variant
@@ -261,6 +353,8 @@ function CreateItemVariant(printDebug, frm, cdt, cdn, validate_attributes, refre
                         var grid_row = cur_frm.open_grid_row();
 
                         grid_row.grid_form.fields_dict.item_code.set_value(variant.name);
+						
+						frappe.model.set_value(soi.doctype, soi.name, "template", "");
 
 						if (refresh_items)
 							refresh_field("items");
@@ -289,47 +383,70 @@ function ReconfigurerItemVariant(printDebug, doc, cdt, cdn) {
 
         var soi = locals[cdt][cdn];
         if (printDebug) console.log(__("soi:" + soi.item_code));
+		
+		//Trouver le modele de l'item
+		frappe.call({
+			method: "frappe.client.get_value",
+			args: {
+				"doctype": "Item",
+				"filters": {
+					"name": soi.item_code
+				},
+				"fieldname": ["variant_of"]
+			},
+			callback: function(res) {
+				if (res.message.variant_of){
+					if (printDebug) console.log(__("res.message.variant_of:" + res.message.variant_of));
+					var variant_of = res.message.variant_of;
+					//Lancer le call
+					frappe.call({
+						method: "radplusplus.radplusplus.controllers.configurator.get_item_variant_attributes_values",
+						args: {
+							"user_name": user,
+							"item_code": soi.item_code
+						},
+						callback: function(res) {
+							if (printDebug) console.log(__("CALL BACK get_item_variant_attributes_values"));
+							//Convertir le message en Array
+							var attributes = (res.message || []);
+							var variantAttributes = {};
+							var grid_row = cur_frm.open_grid_row();
 
-        //Lancer le call
-        frappe.call({
-            method: "radplusplus.radplusplus.controllers.configurator.get_item_variant_attributes_values",
-            args: {
-                "user_name": user,
-                "item_code": soi.item_code
-            },
-            callback: function(res) {
-                if (printDebug) console.log(__("CALL BACK get_item_variant_attributes_values"));
-                //Convertir le message en Array
-                var attributes = (res.message || []);
-                var variantAttributes = {};
-                var grid_row = cur_frm.open_grid_row();
+							//pour chaque attribut
+							for (var j = 0; j < attributes.length; j++) {
+								if (printDebug) console.log(__(attributes[j]));
+								if (grid_row.grid_form.fields_dict[attributes[j][0]]){
+									grid_row.grid_form.fields_dict[attributes[j][0]].set_value(attributes[j][1]);
+								}
+								
+							}
 
-                //pour chaque attribut
-                for (var j = 0; j < attributes.length; j++) {
-                    if (printDebug) console.log(__(attributes[j]));
-                    grid_row.grid_form.fields_dict[attributes[j][0]].set_value(attributes[j][1]);
-                }
+							//Assigner l'item_code du configurateur
+							frappe.call({
+								method: "frappe.client.get_value",
+								args: {
+									"doctype": "Item",
+									"filters": {
+										"configurator_of": variant_of
+									},
+									"fieldname": ["name"]
+								},
+								callback: function(res) {
+									soi.configurator_of = res.message.name;
+									grid_row.grid_form.fields_dict.template.set_value(soi.configurator_of);
+									if (printDebug) console.log(__("soi.configurator_of:" + soi.configurator_of));
+								}
+							});
 
-                //Assigner l'item_code du configurateur
-                frappe.call({
-                    method: "frappe.client.get_value",
-                    args: {
-                        "doctype": "Item",
-                        "filters": {
-                            "configurator_of": soi.variant_of
-                        },
-                        "fieldname": ["name"]
-                    },
-                    callback: function(res) {
-                        soi.configurator_of = res.message.name;
-                        grid_row.grid_form.fields_dict.item_code.set_value(soi.configurator_of);
-                        if (printDebug) console.log(__("soi.configurator_of:" + soi.configurator_of));
-                    }
-                });
-
-                if (printDebug) console.log(__("CALL BACK get_item_variant_attributes_values END"));
-            }
-        });
+							if (printDebug) console.log(__("CALL BACK get_item_variant_attributes_values END"));
+						}
+					});
+				}
+				else{
+					if (printDebug) console.log(__(soi.item_code + " n'est pas un variant"));
+				}
+			}
+		});
     }
     if (printDebug) console.log(__("END ReconfigurerItemVariant"));
 }

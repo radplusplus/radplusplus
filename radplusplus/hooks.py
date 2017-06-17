@@ -10,6 +10,7 @@ app_icon = "octicon octicon-file-directory"
 app_color = "'blue'"
 app_email = "info@radplusplus.com"
 app_license = "MIT"
+fixtures = ["Custom Script"]
 
 # Includes in <head>
 # ------------------
@@ -93,9 +94,8 @@ app_license = "MIT"
 # on_cancel
 # on_update_after_submit
 doc_events = {
-	"Item": {
-		"after_insert": "radplusplus.radplusplus.controllers.item_variant.item_after_insert",
-		"on_trash": "radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.delete_from_item"
+	"Production Order": {
+		"on_cancel": "radplusplus.radplusplus.controllers.manufacturing_controllers.on_cancel"
 	}
 }
 
@@ -136,12 +136,13 @@ override_whitelisted_methods = {
 	"erpnext.stock.doctype.material_request.material_request.make_request_for_quotation" : "radplusplus.stock.doctype.material_request.material_request.make_request_for_quotation",
 	"erpnext.stock.doctype.material_request.material_request.make_purchase_order_based_on_supplier" : "radplusplus.stock.doctype.material_request.material_request.make_purchase_order_based_on_supplier",
 	"erpnext.stock.doctype.material_request.material_request.make_stock_entry" : "radplusplus.stock.doctype.material_request.material_request.make_stock_entry",
-	"erpnext.stock.doctype.material_request.material_request.aise_production_orders" : "radplusplus.stock.doctype.material_request.material_request.aise_production_orders",
+	"erpnext.stock.doctype.material_request.material_request.raise_production_orders" : "radplusplus.stock.doctype.material_request.material_request.raise_production_orders",
 	"erpnext.crm.doctype.lead.lead.get_lead_details" : "radplusplus.crm.doctype.lead.lead.get_lead_details",
 	"erpnext.crm.doctype.opportunity.opportunity.get_lead_details" : "radplusplus.crm.doctype.opportunity.opportunity.get_lead_details",
-	"erpnext.controllers.item_variant.create_variant" : "radplusplus.radplusplus.controllers.item_variant.create_variant"
+	"erpnext.controllers.item_variant.create_variant" : "radplusplus.radplusplus.controllers.item_variant.create_variant",
+	"erpnext.manufacturing.doctype.production_order.production_order.make_stock_entry":"radplusplus.radplusplus.controllers.manufacturing_controllers.make_stock_entry"
 	}
-#"erpnext.controllers.item_variant.get_variant" : "radplusplus.radplusplus.controllers.item_variant.get_variant"
+#
 
 doctype_js = {
 	"Sales Order":["public/js/configurator.js"],
@@ -150,6 +151,7 @@ doctype_js = {
 	"Stock Entry":["public/js/configurator.js"],
 	"Variant Price List":["public/js/configurator.js"],
 	"Opportunity":["public/js/configurator.js"],
+	"Material Request":["public/js/configurator.js"],
 }
 # doctype_list_js = {
 	# "Sales Order":["public/js/configurator.js"],
