@@ -12,7 +12,7 @@ import itertools
 import operator
 from frappe.utils.jinja import render_template
 
-print_debug = False
+print_debug = True
 
 @frappe.whitelist()
 def get_configurator_attributes_values(user_name):
@@ -129,7 +129,7 @@ def groupe_attributes_and_translate(attributes_values):
 		for item in subiter:
 			#Tuple of value and translation
 			t = (item[1], _(item[1]))
-			frappe.errprint(t)
+			if print_debug: frappe.errprint(t)
 			list.append(t)
 		data[key] = list
 	return data
