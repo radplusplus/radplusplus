@@ -929,6 +929,29 @@
    "property": "width", 
    "property_type": null, 
    "value": "167"
+  }, 
+  {
+   "_assign": null, 
+   "_comments": null, 
+   "_liked_by": null, 
+   "_user_tags": null, 
+   "creation": "2017-02-10 16:01:47.733594", 
+   "default_value": null, 
+   "doc_type": "Item Language", 
+   "docstatus": 0, 
+   "doctype_or_field": "DocField", 
+   "field_name": "description", 
+   "idx": 0, 
+   "modified": "2017-02-10 16:01:47.733594", 
+   "modified_by": "Administrator", 
+   "name": "Item Language-description-width", 
+   "owner": "Administrator", 
+   "parent": null, 
+   "parentfield": null, 
+   "parenttype": null, 
+   "property": "width", 
+   "property_type": null, 
+   "value": "211"
   }
  ], 
  "sync_on_migrate": 1
