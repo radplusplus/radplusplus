@@ -51,7 +51,8 @@ def make_material_request(source_name, target_doc=None):
 			"field_map": {
 				"parent": "sales_order",
 				"stock_uom": "uom",
-				"batch_no": "batch_no" # 2016-11-07 - JDLP
+				"batch_no": "batch_no", # 2016-11-07 - JDLP
+				"name": "sales_order_item" # 2017-06-26 - RENMAI
 			},
 			"condition": lambda doc: not frappe.db.exists('Product Bundle', doc.item_code),
 			"postprocess": update_item

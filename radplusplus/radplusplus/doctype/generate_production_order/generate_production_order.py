@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
@@ -168,9 +169,10 @@ class GenerateProductionOrder(Document):
 		item_condition = ""
 		if self.fg_item:
 			item_condition = ' and mr_item.item_code = "' + frappe.db.escape(self.fg_item, percent=False) + '"'
-
+	
+		# RENMAI - 2017-06-26 - ajout des references de commandes pour material request.
 		items = frappe.db.sql("""select distinct parent, name, item_code, warehouse,
-			(qty - ordered_qty) as pending_qty
+			(qty - ordered_qty) as pending_qty, sales_order, sales_order_item, idx
 			from `tabMaterial Request Item` mr_item
 			where parent in (%s) and docstatus = 1 and qty > ordered_qty
 			and exists (select name from `tabBOM` bom where bom.item=mr_item.item_code
@@ -183,6 +185,10 @@ class GenerateProductionOrder(Document):
 	def add_items(self, items):
 		self.clear_table("items")
 		for p in items:
+			production_order_name = frappe.db.get_value("Production Order", {"material_request_item": p["name"], "docstatus" : 0}, "name" )
+			if production_order_name:
+				frappe.msgprint(_("La ligne {0} de la demande de matériel {1} est déjà liée au bon de travail non-soumis {2}.").format(p["idx"], p["parent"],production_order_name))
+				continue
 			item_details = get_item_details(p['item_code'])
 			pi = self.append('items', {})
 			pi.warehouse				= p['warehouse']
@@ -193,13 +199,16 @@ class GenerateProductionOrder(Document):
 			pi.planned_qty				= flt(p['pending_qty'])
 			pi.pending_qty				= flt(p['pending_qty'])
 
-			# renmai - 2017-03-06 - ajout du pi.sales_order_item		= p['name']
+			# RENMAI - 2017-03-06 - ajout du pi.sales_order_item		= p['name']
+			# RENMAI - 2017-06-26 - ajout des references de commandes pour material request.
 			if self.get_items_from == "Sales Order":
-				pi.sales_order		= p['parent']
-				pi.sales_order_item		= p['name']
+				pi.sales_order = p['parent']
+				pi.sales_order_item	= p['name']
 			elif self.get_items_from == "Material Request":
-				pi.material_request		= p['parent']
+				pi.material_request	= p['parent']
 				pi.material_request_item = p['name']
+				pi.sales_order	= p['sales_order']
+				pi.sales_order_item	= p['sales_order_item']
 
 	def validate_data(self):
 		self.validate_company()

@@ -10,6 +10,7 @@ from frappe.model.db_query import DatabaseQuery
 class ItemLanguage(Document):
 	pass
 
+print_debug = True
 
 # 2016-12-17 - RM
 # Retourne la description de l'item selon la langue passé en paramètre.
@@ -41,5 +42,7 @@ def item_description_query(doctype, docname, item_code):
 	else:
 		description = frappe.db.get_value("Item", {"item_code":child.item_code}, "description")
 		return description
-		
+
+			
+
 	
