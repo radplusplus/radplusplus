@@ -14,6 +14,7 @@ from erpnext.stock.stock_balance import update_bin_qty, get_indented_qty
 from erpnext.controllers.buying_controller import BuyingController
 from erpnext.manufacturing.doctype.production_order.production_order import get_item_details
 from erpnext.stock.doctype.material_request.material_request import update_item, set_missing_values
+from radplusplus.radplusplus.controllers.manufacturing_controllers import set_production_order_materials_and_operations
 
 
 print_debug = True
@@ -167,11 +168,13 @@ def raise_production_orders(material_request):
 				prod_order = frappe.new_doc("Production Order")
 				prod_order.production_item = d.item_code
 				prod_order.qty = d.qty - d.ordered_qty
+				prod_order.sales_order = d.sales_order
+				prod_order.sales_order_item = d.sales_order_item
 				prod_order.fg_warehouse = d.warehouse
+				prod_order.source_warehouse = frappe.db.get_single_value("Manufacturing Settings", "default_raw_material_warehouse")
 				prod_order.description = d.description
 				prod_order.stock_uom = d.uom
 				prod_order.expected_delivery_date = d.schedule_date
-				prod_order.sales_order = d.sales_order
 				prod_order.bom_no = get_item_details(d.item_code).bom_no
 				prod_order.material_request = mr.name
 				prod_order.material_request_item = d.name
@@ -179,6 +182,13 @@ def raise_production_orders(material_request):
 				prod_order.company = mr.company
 				prod_order.batch_no = d.batch_no # 2016-11-07 - JDLP
 				prod_order.wip_warehouse = warehouse.get('wip_warehouse') # 2016-11-07 - JDLP
+				prod_order.status = "Draft"
+				prod_order.project = frappe.db.get_value("Sales Order", d.sales_order, "project")
+				prod_order.reference_client = frappe.db.get_value("Sales Order", d.sales_order, "po_no")
+				prod_order.customer = frappe.db.get_value("Sales Order", d.sales_order, "customer")
+				#prod_order.save()
+				
+				prod_order = set_production_order_materials_and_operations(prod_order.bom_no,prod_order)
 				prod_order.save()
 				production_orders.append(prod_order.name)
 			else:

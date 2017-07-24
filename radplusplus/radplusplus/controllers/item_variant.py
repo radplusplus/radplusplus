@@ -17,7 +17,7 @@ import radplusplus
 import myrador
 
 ########################## Section Rad++ ##########################
-print_debug = False
+print_debug = True
 
 		
 @frappe.whitelist()
@@ -44,7 +44,15 @@ def regenerate_description_from_item_list(items_list):
 				doc_item.save(True)
 		frappe.msgprint("Description créés.")
 	else:
-		frappe.msgprint("Aucun variant de trouvé.")		
+		frappe.msgprint("Aucun variant de trouvé.")	
+
+@frappe.whitelist()
+def regenerate_description_from_item_code(item_code):	
+	
+	doc_item = frappe.get_doc("Item",item_code)
+	if doc_item:
+		make_variant_description(doc_item) 
+		doc_item.save(True)			
 
 @frappe.whitelist()
 def item_before_insert(item, args):
@@ -59,11 +67,14 @@ def create_variant(item, args):
 	start_time = time.time()
 	variant = erpnext.controllers.item_variant.create_variant(item.item_code, args)
 	if print_debug: frappe.errprint("--- create_variant %s seconds ---" % (time.time() - start_time))
-	
-	#start_time = time.time()
-	#make_variant_description(variant)
-	
-	#if print_debug: frappe.errprint("--- make_variant_description %s seconds ---" % (time.time() - start_time))
+
+	# RENMAI - 2017-07-07 - Permet de copier la propriété uninheritable lors de la création d'un variant.
+	for d in variant.attributes:
+		if print_debug: frappe.errprint("d.attribute : " + d.attribute)
+		uninheritable = frappe.get_value("Item Variant Attribute", {"parent":item.item_code,"attribute":d.attribute},"uninheritable")
+		if uninheritable:			
+			if print_debug: frappe.errprint("uninheritable : " + cstr(uninheritable))
+			d.uninheritable = uninheritable
 	
 	from radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode import create_from_item
 	create_from_item(item, args)
@@ -116,6 +127,7 @@ def make_variant_description(variant):
 	if print_debug: frappe.errprint("variant : " + cstr(variant.name))
 	if variant.variant_of is not None:
 		template = frappe.get_doc("Item", variant.variant_of)
+		variant.set('language',[])
 		for template in template.description_template:
 			jinjaTemplate = template.description
 			values = {}
@@ -155,17 +167,27 @@ def make_variant_description(variant):
 							"language": template.language}
 			name = frappe.db.get_value("Item Language",	filters,"name",None,False,False,False)
 			language_description = None
-			if name:
-				if print_debug: frappe.errprint("if name")
-				language_description = frappe.get_doc("Item Language", name)
-				frappe.db.set_value("Item Language", name, "description", description)
-			if not language_description:
-				if print_debug: frappe.errprint("if not language_description")
-				values = filters
-				values["doctype"] = "Item Language"
-				language_description = frappe.get_doc(values)
-				language_description.description = description
-				variant.append("language", language_description)
+			# for d in self.language:
+				# if d.language = template.language
+					# d.db_set('description', description, update_modified = False)
+			# if name:
+				# if print_debug: frappe.errprint("if name")
+				# language_description = frappe.get_doc("Item Language", name)
+				# frappe.db.set_value("Item Language", name, "description", description)
+				
+			# if not language_description:
+				# if print_debug: frappe.errprint("if not language_description")
+				# values = filters
+				# values["doctype"] = "Item Language"
+				# language_description = frappe.get_doc(values)
+				# language_description.description = description
+				# variant.append("language", language_description)
+				
+			values = filters
+			values["doctype"] = "Item Language"
+			language_description = frappe.get_doc(values)
+			language_description.description = description
+			variant.append("language", language_description)
 
 # 2016-08-23 Ajoute par Antonio pour creer et faire le submit 
 @frappe.whitelist()
@@ -206,6 +228,7 @@ def create_variant_and_submit(template_item_code, args):
 		if not frappe.db.exists("Item", variant.item_code):
 			variant.docs = 1
 			variant.save(True)
+			frappe.errprint("--- variant.save(True) ---")
 		frappe.errprint("--- save %s seconds ---" % (time.time() - start_time5))
 		
 		start_time6 = time.time()
@@ -281,7 +304,8 @@ def get_item_variant_attributes_values(item_code):
 			SELECT
 			`tabItem Attribute`.attribute_name,
 			`tabItem Variant Attribute`.attribute_value,
-			`tabItem Attribute`.field_name
+			`tabItem Attribute`.field_name,
+			`tabItem Variant Attribute`.uninheritable
 			FROM
 			`tabItem Variant Attribute`
 			INNER JOIN `tabItem Attribute` ON `tabItem Variant Attribute`.attribute = `tabItem Attribute`.`name`

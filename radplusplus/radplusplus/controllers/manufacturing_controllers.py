@@ -28,12 +28,14 @@ def update_status(self, status=None):
 	'''Update status of production order if unknown'''
 	if not status:
 		status = self.get_status(status)
-
-	if status != self.status:
+		
+	if status != self.status:	
 		self.db_set("status", status)
-
+		if print_debug: frappe.errprint("status : " + status)
+		
+	
 	update_required_items(self)
-	update_production_order_item(self)
+	# update_production_order_item(self)
 
 	return status
 
@@ -140,10 +142,11 @@ def set_material_details(self):
 	for d in self.get("production_order_item"):
 		if self.qty:
 			d.required_qty = d.quantity_per * self.qty
-			
 		item = frappe.get_doc("Item",d.item_code)
-		if self.customer and item.variant_of == "PM":
-			d.warehouse = frappe.db.get_value("Customer", self.customer, "default_warehouse")
+		if self.sales_order_item and item.variant_of == "PM":
+			if frappe.db.get_value("Sales Order Item", self.sales_order_item, "description_sous_traitance"):
+				d.warehouse = frappe.db.get_value("Customer", self.customer, "default_warehouse")
+			d.warehouse = item.default_warehouse
 		elif item.default_warehouse:
 			d.warehouse = item.default_warehouse
 		else:
@@ -155,7 +158,7 @@ def set_material_details(self):
 def update_transferred_qty(self, status):
 	""" Called to refresh transferred_qty based on stock_entry"""
 	self = frappe.get_doc("Production Order", self)
-	status = update_status(status)
+	status = update_status(self,status)
 	self.update_planned_qty()
 	frappe.msgprint(_("Production Order status is {0}").format(status))
 	self.notify_update()
@@ -164,14 +167,14 @@ def update_transferred_qty(self, status):
 def stop_unstop(self, status):
 	""" Called from client side on Stop/Unstop event"""
 	self = frappe.get_doc("Production Order", self)
-	status = update_status(status)
+	status = update_status(self, status)
 	self.update_planned_qty()
 	frappe.msgprint(_("Production Order status is {0}").format(status))
 	self.notify_update()
 
 @frappe.whitelist()
 def on_cancel(self,method):
-	frappe.msgprint(_("on_cancel HOOK*"))
+	if print_debug: frappe.msgprint(_("on_cancel HOOK*"))
 	
 @frappe.whitelist()
 def set_production_order_materials_and_operations(source_name, target_doc=None):
@@ -185,6 +188,7 @@ def set_production_order_materials_and_operations(source_name, target_doc=None):
 
 	def update_item(source, target, source_parent):
 		target.quantity_per = source.qty / source_parent.quantity
+		target.warehouse = frappe.db.get_single_value("Manufacturing Settings", "default_raw_material_warehouse")
 	
 	def update_operation(source, target, source_parent):
 		target.minutes_per = source.time_in_mins / source_parent.quantity
@@ -355,8 +359,8 @@ def get_transfered_raw_materials(self):
 						if d.get(item.warehouse):
 							qty-= d.get(item.warehouse)
 	
-			if print_debug: frappe.errprint("item.item_code : " + cstr(item.item_code))			
-			if print_debug: frappe.errprint("item.batch_no : " + cstr(item.batch_no))
+			if print_debug: frappe.msgprint("item.item_code : " + cstr(item.item_code))			
+			if print_debug: frappe.msgprint("item.batch_no : " + cstr(item.batch_no))
 			
 			if qty > 0:
 				add_to_stock_entry_detail(self,{
@@ -529,6 +533,8 @@ def calculate_rate_and_amount(self, force=False, update_finished_item_rate=True)
 @frappe.whitelist()
 def make_stock_entry(production_order_id, purpose, qty=None):
 	
+	if print_debug: frappe.errprint("make_stock_entry")
+	
 	production_order = frappe.get_doc("Production Order", production_order_id)
 	
 	if print_debug: frappe.msgprint(cstr(production_order.name))
@@ -542,10 +548,16 @@ def make_stock_entry(production_order_id, purpose, qty=None):
 	stock_entry.fg_completed_qty = qty or (flt(production_order.qty) - flt(production_order.produced_qty))
 
 	if purpose=="Material Transfer for Manufacture":
+		if print_debug: frappe.errprint("if purpose")
 		if production_order.source_warehouse:
 			stock_entry.from_warehouse = production_order.source_warehouse
 		stock_entry.to_warehouse = production_order.wip_warehouse
-		stock_entry.project = production_order.project		
+		stock_entry.project = production_order.project	
+		if production_order.sales_order:
+			if print_debug: frappe.errprint("if production_order.sales_order : " + production_order.sales_order)
+			doc_sales_order = frappe.get_doc("Sales Order", production_order.sales_order)
+			if doc_sales_order.po_no:
+				stock_entry.po_no = doc_sales_order.po_no
 	else:
 		stock_entry.from_warehouse = production_order.wip_warehouse
 		stock_entry.to_warehouse = production_order.fg_warehouse
@@ -558,9 +570,12 @@ def make_stock_entry(production_order_id, purpose, qty=None):
 	if purpose=="Material Transfer for Manufacture":
 		for d in stock_entry.items:
 			item = frappe.get_doc("Item",d.item_code)
-			if production_order.customer and item.variant_of == "PM":
-				d.s_warehouse = frappe.db.get_value("Customer", production_order.customer, "default_warehouse")
-				d.is_sample_item = 1
+			if production_order.sales_order_item and item.variant_of == "PM":
+				if frappe.db.get_value("Sales Order Item", production_order.sales_order_item, "description_sous_traitance"):
+					d.s_warehouse = frappe.db.get_value("Customer", production_order.customer, "default_warehouse")
+					d.is_sample_item = 1
+				else:
+					d.s_warehouse = item.default_warehouse
 			elif item.default_warehouse:
 				d.s_warehouse = item.default_warehouse
 			else:

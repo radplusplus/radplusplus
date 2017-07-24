@@ -84,7 +84,6 @@ def get_attributes_values(attribute):
 	
 def get_user_lang(user_name):
 	lang = frappe.db.get_value("User", user_name, "language")
-	if print_debug: frappe.errprint("lang:" + lang)
 	return lang
 
 def update_user_translations(lang):
