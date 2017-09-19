@@ -20,7 +20,7 @@ from frappe.model.mapper import get_mapped_doc
 from erpnext.stock.utils import get_incoming_rate
 
 ########################## Section Rad++ ##########################
-print_debug = True
+print_debug = False
 		
 
 		
@@ -141,7 +141,7 @@ def set_material_details(self):
 	
 	for d in self.get("production_order_item"):
 		if self.qty:
-			d.required_qty = d.quantity_per * self.qty
+			d.required_qty = flt(d.quantity_per) * flt(self.qty)
 		item = frappe.get_doc("Item",d.item_code)
 		if self.sales_order_item and item.variant_of == "PM":
 			if frappe.db.get_value("Sales Order Item", self.sales_order_item, "description_sous_traitance"):
@@ -174,7 +174,7 @@ def stop_unstop(self, status):
 
 @frappe.whitelist()
 def on_cancel(self,method):
-	if print_debug: frappe.msgprint(_("on_cancel HOOK*"))
+	pass
 	
 @frappe.whitelist()
 def set_production_order_materials_and_operations(source_name, target_doc=None):

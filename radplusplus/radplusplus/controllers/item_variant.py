@@ -17,7 +17,7 @@ import radplusplus
 import myrador
 
 ########################## Section Rad++ ##########################
-print_debug = True
+print_debug = False
 
 		
 @frappe.whitelist()
@@ -29,7 +29,7 @@ def make_description_from_template(template):
 		fields=['name','variant_of']
 	)
 	
-	if print_debug: frappe.msgprint("len(items_list):" + str(len(items_list)))
+	frappe.msgprint("len(items_list):" + str(len(items_list)))
 	
 	from frappe.utils.background_jobs import enqueue
 	enqueue(regenerate_description_from_item_list, items_list=items_list) 
@@ -41,7 +41,7 @@ def regenerate_description_from_item_list(items_list):
 			doc_item = frappe.get_doc("Item",item.name)
 			if doc_item:
 				make_variant_description(doc_item) 
-				doc_item.save(True)
+				#doc_item.save(True)
 		frappe.msgprint("Description créés.")
 	else:
 		frappe.msgprint("Aucun variant de trouvé.")	
@@ -51,8 +51,8 @@ def regenerate_description_from_item_code(item_code):
 	
 	doc_item = frappe.get_doc("Item",item_code)
 	if doc_item:
-		make_variant_description(doc_item) 
-		doc_item.save(True)			
+		make_variant_description(doc_item)		 
+		doc_item.save(True)
 
 @frappe.whitelist()
 def item_before_insert(item, args):
@@ -144,16 +144,10 @@ def make_variant_description(variant):
 					target_field = "source_name"
 					source_field = "target_name"
 					template_language = "fr"
-					
-				# if print_debug: frappe.errprint("d.attribute : " + d.attribute)
-				# if print_debug: frappe.errprint("attribute.field_name : " + attribute.field_name)
-				# if print_debug: frappe.errprint("d.attribute_value : " + d.attribute_value)
-				
+									
 				filters = {'language_code': template_language,source_field:d.attribute_value}
 				target_name = frappe.db.get_value("Translation",filters,target_field,None,False,False,False)
 				values[attribute.field_name] = target_name or d.attribute_value
-				# if print_debug: frappe.errprint("target_name : " + cstr(target_name))
-				# if print_debug: frappe.errprint("jinjaTemplate : " + jinjaTemplate)
 				
 			if print_debug: frappe.errprint("jinjaTemplate : " + jinjaTemplate)
 			if print_debug: frappe.errprint("values : " + cstr(values))
@@ -166,14 +160,25 @@ def make_variant_description(variant):
 							"parenttype": "Item",
 							"language": template.language}
 			name = frappe.db.get_value("Item Language",	filters,"name",None,False,False,False)
+			if print_debug and name: frappe.errprint("name : " + name)
 			language_description = None
+			if print_debug and name: frappe.errprint("language_description : " )
 			# for d in self.language:
 				# if d.language = template.language
 					# d.db_set('description', description, update_modified = False)
 			# if name:
-				# if print_debug: frappe.errprint("if name")
-				# language_description = frappe.get_doc("Item Language", name)
+				# if print_debug: frappe.errprint("if name" + name)
+				# if print_debug: frappe.errprint("description : " + description)
+				# #language_description = frappe.get_doc("Item Language", name)
 				# frappe.db.set_value("Item Language", name, "description", description)
+			# else:
+			if print_debug: frappe.errprint("Else : " )
+			values = filters
+			values["doctype"] = "Item Language"
+			language_description = frappe.get_doc(values)
+			language_description.description = description
+			variant.append("language", language_description)
+			
 				
 			# if not language_description:
 				# if print_debug: frappe.errprint("if not language_description")
@@ -182,13 +187,8 @@ def make_variant_description(variant):
 				# language_description = frappe.get_doc(values)
 				# language_description.description = description
 				# variant.append("language", language_description)
-				
-			values = filters
-			values["doctype"] = "Item Language"
-			language_description = frappe.get_doc(values)
-			language_description.description = description
-			variant.append("language", language_description)
 
+	
 # 2016-08-23 Ajoute par Antonio pour creer et faire le submit 
 @frappe.whitelist()
 def create_variant_and_submit(template_item_code, args):

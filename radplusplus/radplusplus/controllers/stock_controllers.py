@@ -19,8 +19,13 @@ print_debug = True
 def reasign_batch(item_code, batch, stock_entry):
 	doc_batch = frappe.get_doc("Batch",batch)
 	
+	if "Nouveau" in stock_entry: 
+		frappe.msgprint("l'entrée de marchandise doit être enregistrée avant de pouvoir utiliser cette fonction.")
+		return
+	
 	linked_doctypes = get_linked_doctypes("Batch")
 	if print_debug: frappe.errprint("linked_doctypes : " + cstr(linked_doctypes))
+	if print_debug: frappe.errprint("stock_entry : " + cstr(stock_entry))
 	
 	linked_doc = get_linked_docs("Batch",batch,	linked_doctypes)
 	

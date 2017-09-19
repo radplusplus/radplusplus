@@ -23,6 +23,7 @@ def get_lead_details(lead, posting_date=None, company=None):
 	from erpnext.accounts.party import set_address_details
 	out = frappe._dict()
 
+	frappe.msgprint("get_lead_details RADPP")
 	lead_doc = frappe.get_doc("Lead", lead)
 	lead = lead_doc
 

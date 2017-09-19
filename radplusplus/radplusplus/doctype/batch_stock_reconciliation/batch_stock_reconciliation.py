@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
@@ -43,7 +44,6 @@ class BatchStockReconciliation(StockController):
 		self.make_gl_entries_on_cancel()
 
 	def remove_items_with_no_change(self):
-		frappe.msgprint("remove_items_with_no_change")
 		"""Remove items if qty or rate is not changed"""
 		self.difference_amount = 0.0
 		def _changed(item):			
@@ -82,7 +82,6 @@ class BatchStockReconciliation(StockController):
 			frappe.msgprint(_("Removed items with no change in quantity or value."))
 
 	def validate_data(self):
-		frappe.msgprint("validate_data")
 		def _get_msg(row_num, msg):
 			return _("Row # {0}: ").format(row_num+1) + msg
 
@@ -182,7 +181,6 @@ class BatchStockReconciliation(StockController):
 			self.validation_messages.append(_("Row # ") + ("%d: " % (row_num)) + cstr(e))
 
 	def update_stock_ledger(self):
-		frappe.msgprint("update_stock_ledger")
 		"""	find difference between current and expected entries
 			and create stock ledger entries based on the difference"""
 		from erpnext.stock.stock_ledger import get_previous_sle
@@ -223,21 +221,11 @@ class BatchStockReconciliation(StockController):
 					balance_rate = previous_sle.get("valuation_rate", 0)
 				previous_qty = get_item_warehouse_batch_actual_qty(row.item_code, row.warehouse, row.batch_no, self.posting_date, self.posting_time)
 				
-				
-				
-				if print_debug: frappe.msgprint("balance_qty: " + cstr(balance_qty))
-				if print_debug: frappe.msgprint("balance_rate: " + cstr(balance_rate))
-				if print_debug: frappe.msgprint("previous_qty: " + cstr(previous_qty))
-				
 				row.qty = row.qty - previous_qty
 				row.qty_after_transaction = balance_qty + row.qty
 				
-				if print_debug: frappe.msgprint("row.qty: " + cstr(row.qty))
-				if print_debug: frappe.msgprint("row.qty_after_transaction: " + cstr(row.qty_after_transaction))
-				
-				row.valuation_rate = flt(((balance_qty*balance_rate)+(row.qty*row.valuation_rate))/(balance_qty+row.qty))
-				
-				if print_debug: frappe.msgprint("row.valuation_rate: " + cstr(row.valuation_rate))
+				if (balance_qty+row.qty) != 0:
+					row.valuation_rate = flt(((balance_qty*balance_rate)+(row.qty*row.valuation_rate))/(balance_qty+row.qty))
 				
 				if row.qty and not row.valuation_rate:
 					frappe.throw(_("Valuation Rate required for Item in row {0}").format(row.idx))
@@ -275,23 +263,18 @@ class BatchStockReconciliation(StockController):
 	#JDLP - 2017-04-18 Methode copie de Stock_ledger
 	#non utilise
 	def radpp_make_sl_entries(self, sl_entries, is_amended=None, allow_negative_stock=False, via_landed_cost_voucher=False):
-		frappe.msgprint("radpp_make_sl_entries: ")
 		if sl_entries:
-			frappe.msgprint("sl_entries: ")
 			from erpnext.stock.utils import update_bin
 			from erpnext.stock.stock_ledger import make_entry, set_as_cancel, delete_cancelled_entry
 
 			cancel = True if sl_entries[0].get("is_cancelled") == "Yes" else False
 			if cancel:
-				frappe.msgprint("cancel1: ")
 				set_as_cancel(sl_entries[0].get('voucher_no'), sl_entries[0].get('voucher_type'))
 
 			for sle in sl_entries:
 				sle_id = None
-				frappe.msgprint("actual_qty: " + cstr(sle['actual_qty']))
 				if sle.get('is_cancelled') == 'Yes':
 					sle['actual_qty'] = -flt(sle['actual_qty'])
-				frappe.msgprint("actual_qty: " + cstr(sle['actual_qty']))
 
 				#if sle.get("actual_qty") or sle.get("voucher_type")=="Batch Stock Reconciliation":
 				#	frappe.msgprint("make_entry: ")
@@ -305,7 +288,6 @@ class BatchStockReconciliation(StockController):
 				update_bin(args, allow_negative_stock, via_landed_cost_voucher)
 
 			if cancel:
-				frappe.msgprint("cancel2: ")
 				delete_cancelled_entry(sl_entries[0].get('voucher_type'), sl_entries[0].get('voucher_no'))
 
 	#JDLP - 2017-04-18 Methode copie de Stock_ledger
@@ -322,9 +304,6 @@ class BatchStockReconciliation(StockController):
 		
 		parent = frappe.get_doc(sle.voucher_type,sle.voucher_no)
 		
-		frappe.msgprint("posting_date: " + cstr(parent.posting_date))
-		frappe.msgprint("posting_time: " + cstr(parent.posting_time))
-		
 		# assert
 		previous_sle_args = {
 			"item_code": sle.item_code,
@@ -335,7 +314,6 @@ class BatchStockReconciliation(StockController):
 		}
 		from erpnext.stock.stock_ledger import get_previous_sle
 		previous_sle = get_previous_sle(previous_sle_args)
-		frappe.msgprint("previous_sle: " + cstr(previous_sle))
 		prev_stock_value = (previous_sle.stock_value or 0.0) if previous_sle else 0.0
 		sle.valuation_rate = args['valuation_rate']
 		sle.qty_after_transaction = args['qty_after_transaction']
@@ -351,13 +329,9 @@ class BatchStockReconciliation(StockController):
 		# update current sle
 		sle.stock_queue = json.dumps(sle.stock_queue)
 		sle.stock_value_difference = stock_value_difference
-		frappe.msgprint("valuation_rate: " + cstr(sle.valuation_rate))
 		frappe.get_doc(sle).db_update()	
-		frappe.msgprint("valuation_rate: " + cstr(sle.valuation_rate))	
 		sle.save()
-		frappe.msgprint("valuation_rate: " + cstr(sle.valuation_rate))	
 		sle.submit()
-		frappe.msgprint("valuation_rate: " + cstr(sle.valuation_rate))
 		return sle.name
 	
 	def delete_and_repost_sle(self):
@@ -425,7 +399,7 @@ class BatchStockReconciliation(StockController):
 			self._cancel()
 
 @frappe.whitelist()
-def get_items(warehouse, posting_date, posting_time):
+def get_items(warehouse, posting_date, posting_time, as_dict = 0, as_list = 0):
 	items = frappe.get_list("Bin", fields=["item_code"], filters={"warehouse": warehouse}, as_list=1)
 
 	items += frappe.get_list("Item", fields=["name"], filters= {"is_stock_item": 1, "has_serial_no": 0,
@@ -433,22 +407,53 @@ def get_items(warehouse, posting_date, posting_time):
 			as_list=1)
 
 	res = []
+	
 	for item in set(items):
 		stock_bal = get_stock_balance(item[0], warehouse, posting_date, posting_time,
 			with_valuation_rate=True)
 		#JDLP - 2017-01-30, ajout de batch
-		if frappe.db.get_value("Item",item[0],"disabled") == 0 and frappe.db.get_value("Item",item[0],"has_batch_no") == 0:
-
-			res.append({
-				"item_code": item[0],
-				"warehouse": warehouse,
-				"qty": stock_bal[0],
-				"item_name": frappe.db.get_value('Item', item[0], 'item_name'),
-				"valuation_rate": stock_bal[1],
-				"current_qty": stock_bal[0],
-				"current_valuation_rate": stock_bal[1],
-				"batch_no": ""
-			})
+		if frappe.db.get_value("Item",item[0],"disabled") == 0 and frappe.db.get_value("Item",item[0],"has_batch_no") == 0:				
+			if as_dict:
+				res.append({
+					"item_code": item[0],
+					"warehouse": warehouse,
+					"qty": stock_bal[0],
+					"item_name": frappe.db.get_value('Item', item[0], 'item_name'),
+					"valuation_rate": stock_bal[1],
+					"current_qty": stock_bal[0],
+					"current_valuation_rate": stock_bal[1],
+					"batch_no": ""
+				})
+			if as_list:
+				item_attributes = frappe.get_all("Item Variant Attribute",{"parent":item[0]},["attribute","attribute_value"])
+				species = ""
+				construction = ""
+				flooring_grade = ""
+				flooring_width = ""
+				thickness = ""
+				if item_attributes:
+					if print_debug: frappe.errprint("item_attributes : " + cstr(item_attributes))
+					for attribute in item_attributes:
+						if attribute.attribute == "Essence" : species = attribute.attribute_value
+						if attribute.attribute == "Hardwood Construction" : construction = attribute.attribute_value
+						if attribute.attribute == "Flooring Grade" : flooring_grade = attribute.attribute_value
+						if attribute.attribute == "Flooring Width" : flooring_width = attribute.attribute_value
+						if attribute.attribute == "Flooring Thickness" : thickness = attribute.attribute_value
+				res.append([
+					item[0],
+					"",
+					stock_bal[0],
+					stock_bal[1],
+					species,
+					construction,
+					flooring_grade,
+					flooring_width,
+					thickness,
+					"",
+					"",
+					"",
+					""
+				])
 
 	return res
 
@@ -457,7 +462,7 @@ def get_items(warehouse, posting_date, posting_time):
 #Si la balance de l'item est 0 ne rien ajouter
 #Si la quantite du lot est 0 ne pas l'ajouter
 @frappe.whitelist()
-def get_items_with_batch_no(warehouse, posting_date, posting_time):
+def get_items_with_batch_no(warehouse, posting_date, posting_time, as_dict = 0, as_list = 0):
 	res = get_items(warehouse, posting_date, posting_time)
 	items = frappe.get_list("Item", fields=["name"], filters= {"is_stock_item": 1, "has_serial_no": 0,
 	"has_batch_no": 1, "has_variants": 0, "disabled": 0}, as_list=1)
@@ -471,16 +476,52 @@ def get_items_with_batch_no(warehouse, posting_date, posting_time):
 			#msgprint("batche:" + cstr(batch["name"]))
 			qty = get_item_warehouse_batch_actual_qty(item[0], warehouse, batch["name"], posting_date, posting_time)
 			if qty == 0: continue
-			values = {
-				"item_code": item[0],
-				"warehouse": warehouse,
-				"qty": qty,
-				"item_name": frappe.db.get_value('Item', item[0], 'item_name'),
-				"valuation_rate": stock_bal[1],
-				"current_qty": qty,
-				"current_valuation_rate": stock_bal[1],
-				"batch_no": batch["name"]
-			}
+			if as_list:
+				item_attributes = frappe.get_all("Item Variant Attribute",{"parent":item[0]},["attribute","attribute_value"])
+				species = ""
+				construction = ""
+				flooring_grade = ""
+				flooring_width = ""
+				thickness = ""
+				doc_batch = frappe.get_doc("Batch",{"name":batch["name"]})
+				if item_attributes:
+					if print_debug: frappe.errprint("item_attributes : " + cstr(item_attributes))
+					for attribute in item_attributes:
+						if attribute.attribute == "Essence" : species = attribute.attribute_value
+						if attribute.attribute == "Hardwood Construction" : 
+							if attribute.attribute_value == "Massif":
+								construction = "Massif"
+							else:
+								construction = "Ing."
+						if attribute.attribute == "Flooring Grade" : flooring_grade = attribute.attribute_value
+						if attribute.attribute == "Flooring Width" : flooring_width = attribute.attribute_value
+						if attribute.attribute == "Flooring Thickness" : thickness = attribute.attribute_value
+				values = [
+					item[0],
+					batch["name"],
+					qty,
+					stock_bal[1],
+					species,
+					construction,
+					flooring_grade,
+					flooring_width,
+					thickness,
+					doc_batch.qty_per_box,
+					doc_batch.customer_batch_number,
+					doc_batch.milling,
+					doc_batch.description
+				]
+			if as_dict:
+				values = {
+					"item_code": item[0],
+					"warehouse": warehouse,
+					"qty": qty,
+					"item_name": frappe.db.get_value('Item', item[0], 'item_name'),
+					"valuation_rate": stock_bal[1],
+					"current_qty": qty,
+					"current_valuation_rate": stock_bal[1],
+					"batch_no": batch["name"]
+				}
 			res.append(values)
 	
 	return res
@@ -524,7 +565,6 @@ def get_item_warehouse_batch_actual_qty(item_code, warehouse, batch_no, posting_
 		actual_qty = actual_qty[0][0]
 	else:
 		actual_qty = 0
-	frappe.msgprint("actual_qty: " + cstr(actual_qty))
 	return actual_qty
 
 def get_columns():
@@ -535,14 +575,38 @@ def get_file_name(warehouse):
 	
 @frappe.whitelist()
 def download(warehouse, posting_date, posting_time):
-	columns =[]
-	columns.append(frappe._dict(label=_("Item Code"), fieldtype=str, fieldname="item_code"))
-	columns.append(frappe._dict(label=_("Warehouse"), fieldtype=str, fieldname="warehouse"))
-	columns.append(frappe._dict(label=_("Batch No"), fieldtype=str, fieldname="batch_no"))
-	columns.append(frappe._dict(label=_("Quantity"), fieldtype=int, fieldname="qty"))
-	columns.append(frappe._dict(label=_("Rate"), fieldtype=float, fieldname="valuation_rate"))
-	rows = get_items_with_batch_no(warehouse, posting_date, posting_time)
-	data = get_xls(columns, rows)
+	
+	# columns.append(frappe._dict(label=_("Item Code"), fieldtype=str, fieldname="item_code"))
+	# columns.append(frappe._dict(label=_("Warehouse"), fieldtype=str, fieldname="warehouse"))
+	# columns.append(frappe._dict(label=_("Batch No"), fieldtype=str, fieldname="batch_no"))
+	# columns.append(frappe._dict(label=_("Quantity"), fieldtype=int, fieldname="qty"))
+	# columns.append(frappe._dict(label=_("Rate"), fieldtype=float, fieldname="valuation_rate"))
+	
+	columns =[
+		"Code item",
+		"Lot",
+		"Quantite",		
+		"Taux",
+		"Essence",
+		"Construction",
+		"Grade",
+		"Largeur",
+		"Epaisseur",
+		"Qte/bte",
+		"Ref client",
+		"Moul.",
+		"Info"
+	]
+	
+	data = get_items_with_batch_no(warehouse, posting_date, posting_time, as_list = 1)
+	data.insert(0, columns) 
+	#if print_debug: frappe.errprint("rows : " + cstr(rows))
+	# data = []
+	# data.append(columns)
+	# data.append(rows)
+	if print_debug: frappe.errprint("data : " + cstr(data))
+		
+	data = get_xls(data)
 
 	if not data:
 		frappe.msgprint(_('No Data'))

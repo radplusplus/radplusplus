@@ -451,5 +451,25 @@ function ReconfigurerItemVariant(printDebug, doc, cdt, cdn) {
     if (printDebug) console.log(__("END ReconfigurerItemVariant"));
 }
 
+// 2017-09-11 - RENMAI
+// Script fonctionnel.
+// Il permet de focuser sur template plutot que item_code.
+function set_focus(field) {	
+	// next is table, show the table
+	if(field.df.fieldtype=="Table") {
+		if(!field.grid.grid_rows.length) {
+			field.grid.add_new_row(1);
+		} else {
+			field.grid.grid_rows[0].toggle_view(true);
+		}
+	}
+	else if(field.editor) {
+		field.editor.set_focus();
+	}
+	else if(field.$input) {
+		field.$input.focus();
+	}
+}
+
 ////////////////////////// FIN CONFIGURATEUR //////////////////////////
 //////////////////////////////////////////

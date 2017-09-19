@@ -41,7 +41,7 @@ frappe.ui.form.on('Batch Stock Reconciliation', {
 			function(data) {
 				var w = window.open(
 					frappe.urllib.get_full_url(
-						"/api/method/erpnext.stock.doctype.stock_reconciliation.stock_reconciliation.download?"
+						"/api/method/radplusplus.radplusplus.doctype.batch_stock_reconciliation.batch_stock_reconciliation.download?"
 						+"warehouse="+encodeURIComponent(data.warehouse)
 						+"&posting_date="+encodeURIComponent(frm.doc.posting_date)
 						+"&posting_time="+encodeURIComponent(frm.doc.posting_time)));
@@ -56,11 +56,12 @@ frappe.ui.form.on('Batch Stock Reconciliation', {
 		frappe.prompt({label:"Warehouse", fieldtype:"Link", options:"Warehouse", reqd: 1},
 			function(data) {
 				frappe.call({
-					method:"erpnext.stock.doctype.stock_reconciliation.stock_reconciliation.get_items_with_batch_no",
+					method:"radplusplus.radplusplus.doctype.batch_stock_reconciliation.batch_stock_reconciliation.get_items_with_batch_no",
 					args: {
 						warehouse: data.warehouse,
 						posting_date: frm.doc.posting_date,
-						posting_time: frm.doc.posting_time
+						posting_time: frm.doc.posting_time,
+						as_dict: 1
 					},
 					callback: function(r) {
 						var items = [];
