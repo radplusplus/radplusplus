@@ -171,6 +171,8 @@ def stop_unstop(self, status):
 	self.update_planned_qty()
 	frappe.msgprint(_("Production Order status is {0}").format(status))
 	self.notify_update()
+	from myrador.myrador.doctype.production_order_operation_scheduler.production_order_operation_scheduler  import make_from_production_order
+	make_from_production_order(self)
 
 @frappe.whitelist()
 def on_cancel(self,method):

@@ -17,7 +17,7 @@ import json
 class OpeningEntryAccountError(frappe.ValidationError): pass
 class EmptyStockReconciliationItemsError(frappe.ValidationError): pass
 
-print_debug = True
+print_debug = False
 
 class BatchStockReconciliation(StockController):
 	def __init__(self, arg1, arg2=None):

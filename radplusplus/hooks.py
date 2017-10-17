@@ -152,6 +152,7 @@ doctype_js = {
 	"Variant Price List":["public/js/configurator.js"],
 	"Opportunity":["public/js/configurator.js"],
 	"Material Request":["public/js/configurator.js"],
+	"Timesheet":["public/js/configurator.js"],
 }
 # doctype_list_js = {
 	# "Sales Order":["public/js/configurator.js"],

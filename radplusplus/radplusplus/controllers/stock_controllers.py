@@ -13,7 +13,7 @@ import radplusplus
 import myrador
 
 ########################## Section Rad++ ##########################
-print_debug = True
+print_debug = False
 			
 @frappe.whitelist()
 def reasign_batch(item_code, batch, stock_entry):
@@ -34,17 +34,29 @@ def reasign_batch(item_code, batch, stock_entry):
 		for key, value in linked_doc.items():
 			if print_debug: frappe.errprint("key : " + cstr(key))
 			if print_debug: frappe.errprint("value : " + cstr(value))
-			if key != "Stock Entry":
+			if key != "Stock Entry" and key != "Purchase Receipt":
 				frappe.throw(_("Le lot {0} est lié au document {1}. Veuillez supprimer tous les liens avec le lot {0} avant de continuer").format(batch,cstr(value)))
-			for link in value:
-				stock_entry_split = stock_entry.split('-')
-				if not stock_entry_split[1] in link.name:
-					if print_debug: frappe.errprint("stock_entry : " + stock_entry)
-					if print_debug: frappe.errprint("link.name : " + link.name)
-					frappe.throw(_("Le lot {0} est lié au document {1}. Veuillez supprimer tous les liens avec le lot {0} avant de continuer").format(batch,link.name))
-				for stock_entry_detail_name in frappe.get_all("Stock Entry Detail", {"batch_no":batch,"parent":link.name}, "name"):
-					frappe.db.set_value("Stock Entry Detail", stock_entry_detail_name, "batch_no","")
+			if key == "Stock Entry": 
+				for link in value:
+					stock_entry_split = stock_entry.split('-')
+					if not stock_entry_split[1] in link.name:
+						if print_debug: frappe.errprint("stock_entry : " + stock_entry)
+						if print_debug: frappe.errprint("link.name : " + link.name)
+						frappe.throw(_("Le lot {0} est lié au document {1}. Veuillez supprimer tous les liens avec le lot {0} avant de continuer").format(batch,link.name))
+					for stock_entry_detail_name in frappe.get_all("Stock Entry Detail", {"batch_no":batch,"parent":link.name}, "name"):
+						frappe.db.set_value("Stock Entry Detail", stock_entry_detail_name, "batch_no","")
+			if key == "Purchase Receipt": 
+				for link in value:
+					stock_entry_split = stock_entry.split('-')
+					if not stock_entry_split[1] in link.name:
+						if print_debug: frappe.errprint("stock_entry : " + stock_entry)
+						if print_debug: frappe.errprint("link.name : " + link.name)
+						frappe.throw(_("Le lot {0} est lié au document {1}. Veuillez supprimer tous les liens avec le lot {0} avant de continuer").format(batch,link.name))
+					for doc_detail_name in frappe.get_all("Purchase Receipt Item", {"batch_no":batch,"parent":link.name}, "name"):
+						frappe.db.set_value("Purchase Receipt Item", doc_detail_name, "batch_no","")
 		frappe.db.set_value("Batch", batch, "item",item_code)
+	
+		
 	
 	
 
