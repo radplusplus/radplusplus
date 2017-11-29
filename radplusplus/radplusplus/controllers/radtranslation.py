@@ -11,6 +11,7 @@ from frappe.utils import strip
 from jinja2 import TemplateError
 import itertools, operator
 
+print_debug = False
 
 @frappe.whitelist()
 def get_user_translations(lang):
@@ -53,6 +54,10 @@ def update_translation_from_custom_doc(custom_doc, field_fr, field_en, data_fr, 
 	if custom_doc.docstatus == 1 :
 		server_fr = frappe.db.get_value(custom_doc.doc_type,  {"name": custom_doc.doc_name }, field_fr)
 		server_en = frappe.db.get_value(custom_doc.doc_type,  {"name": custom_doc.doc_name }, field_en)
+		if server_fr:
+			if print_debug: frappe.errprint("server_fr : " + server_fr)
+		if server_en:
+			if print_debug: frappe.errprint("server_en : " + server_en)
 		if server_fr != data_fr or server_en != data_en:
 			translation_doc = frappe.db.get_value("Translation", {"source_name": data_en, "target_name" : data_fr }, "name")
 			if translation_doc:

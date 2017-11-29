@@ -142,7 +142,7 @@ override_whitelisted_methods = {
 	"erpnext.controllers.item_variant.create_variant" : "radplusplus.radplusplus.controllers.item_variant.create_variant",
 	"erpnext.manufacturing.doctype.production_order.production_order.make_stock_entry":"radplusplus.radplusplus.controllers.manufacturing_controllers.make_stock_entry"
 	}
-#
+# 	"erpnext.selling.doctype.sales_order.sales_order.make_delivery_note":"radplusplus.radplusplus.controllers.selling_controllers.make_delivery_note",
 
 doctype_js = {
 	"Sales Order":["public/js/configurator.js"],

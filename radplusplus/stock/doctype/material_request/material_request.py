@@ -41,6 +41,8 @@ def make_purchase_order(source_name, target_doc=None):
 			"field_map": [
 				["name", "material_request_item"],
 				["parent", "material_request"],
+				["sales_order_item", "sales_order_item"],
+				["sales_order", "sales_order"],
 				["uom", "stock_uom"],
 				["uom", "uom"],
 				["batch_no", "batch_no"] # 2016-11-07 - JDLP
@@ -103,6 +105,8 @@ def make_purchase_order_based_on_supplier(source_name, target_doc=None):
 				"field_map": [
 					["name", "material_request_item"],
 					["parent", "material_request"],
+					["sales_order_item", "sales_order_item"],
+					["sales_order", "sales_order"],
 					["uom", "stock_uom"],
 					["uom", "uom"],
 					["batch_no", "batch_no"] # 2016-11-07 - JDLP

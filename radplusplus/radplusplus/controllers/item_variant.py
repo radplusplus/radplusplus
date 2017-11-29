@@ -337,21 +337,18 @@ def get_show_attributes(item_code):
 # 2016-11-04 
 @frappe.whitelist()
 def get_item_attributes_values(item_code):
-	template_item_code = frappe.db.get_value("Item", {"item_code":item_code}, "configurator_of")
-	args = {'item_code': template_item_code}
+	#template_item_code = frappe.db.get_value("Item", {"item_code":item_code}, "variant_of")
+	args = {'item_code': item_code}
 	query = frappe.db.sql("""
 			SELECT
 				`tabItem Variant Attribute`.attribute,
-				`tabItem Attribute Value`.attribute_value
+				`tabItem Variant Attribute`.attribute_value
 			FROM
 				`tabItem Variant Attribute`
-			INNER JOIN `tabItem Attribute Value` ON `tabItem Variant Attribute`.attribute = `tabItem Attribute Value`.parent
 			WHERE
-				`tabItem Variant Attribute`.parent = %(item_code)s AND
-				`tabItem Attribute Value`.abbr <> "_"
+				`tabItem Variant Attribute`.parent = %(item_code)s
 			ORDER BY
-				`tabItem Variant Attribute`.idx ASC,
-				`tabItem Attribute Value`.idx ASC""", args, as_list = 1)
+				`tabItem Variant Attribute`.idx ASC""", args, as_dict = 1)
 	
 	return query
 	

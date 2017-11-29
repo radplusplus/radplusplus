@@ -117,16 +117,6 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
 							//if (printDebug) console.log(__("field.fieldname :" + field.fieldname ));
 							locals[cdt][cdn][field.fieldname] = 1;
 						}
-						
-						/* locals[cdt][cdn][field.fieldname] = 0;
-						var field_name = field.fieldname.toLowerCase().substring(4);
-						for (var k = 0; k < attributes.length; k++) {
-							if (attributes[k][1] == field_name)
-							{
-								locals[cdt][cdn][field.fieldname] = 1;
-								break;
-							}
-						} */
 					}
 				});
 
@@ -196,50 +186,6 @@ function SetConfiguratorOf(printDebug, frm, cdt, cdn) {
 		refresh_field("items");
 	}
 }
-
-/* // 2016-08-29 - JDLP
-// Permet d'afficher ou non les attributs configurables en fonction de "configurator_of"
-// 2016-09-17 - JDLP :
-//		Adaptation pour frappe V 7
-// 		Isolation dans une fonction
-// 2016-10-26 - JDLP :
-//		Modifications majeures pour utiliser un call en pyhton
-function SetVariantOf(printDebug, cdt, cdn) {
-    if (printDebug) console.log(__("SetVariantOf*****************************"));
-
-	var soi = locals[cdt][cdn];
-	
-    //Si un code à été saisit
-    if (locals[cdt][cdn] && locals[cdt][cdn].item_code) {
-		if (printDebug) console.log(__("SetVariantOf avec template"));
-        if (printDebug) console.log(__("soi.item_code:" + soi.item_code));
-		
-        // Retrouver la valeur de variant_of
-        frappe.call({
-            method: "frappe.client.get_value",
-            args: {
-                "doctype": "Item",
-                "filters": {
-                    "item_code": soi.item_code
-                },
-                "fieldname": ["variant_of"]
-            },
-            callback: function(res) {				
-				if (printDebug) console.log(__("res.message.variant_of:" + res.message.variant_of));				
-				frappe.model.set_value(soi.doctype, soi.name, "variant_of", res.message.variant_of);
-				/* var grid_row = cur_frm.open_grid_row();
-				grid_row.grid_form.fields_dict.variant_of.set_value(res.message.variant_of); 
-				refresh_field("items");
-            }
-        });
-    }
-	else{
-		if (printDebug) console.log(__("SetVariantOf sans item code"));
-		var grid_row = cur_frm.open_grid_row();
-		grid_row.grid_form.fields_dict.variant_of.set_value("");
-		refresh_field("items");
-	}
-} */
 
 // 2016-12-17 - RM
 // Permet d'afficher la description formatée de l'item selon la langue du document en cours

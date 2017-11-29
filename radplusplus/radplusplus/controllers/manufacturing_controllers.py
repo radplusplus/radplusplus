@@ -35,6 +35,11 @@ def update_status(self, status=None):
 		
 	
 	update_required_items(self)
+	
+	if status == "Completed":
+		self.set_actual_dates()
+		self.save()
+		
 	# update_production_order_item(self)
 
 	return status
@@ -570,17 +575,22 @@ def make_stock_entry(production_order_id, purpose, qty=None):
 	get_items(stock_entry)
 	
 	if purpose=="Material Transfer for Manufacture":
+		if print_debug: frappe.msgprint("Début du balayage des lignes d'entrée de stock.")
 		for d in stock_entry.items:
+			if print_debug: frappe.msgprint("Item : " + d.item_code)
 			item = frappe.get_doc("Item",d.item_code)
 			if production_order.sales_order_item and item.variant_of == "PM":
+				if print_debug: frappe.msgprint("Si ligne de commande et PM.")	
 				if frappe.db.get_value("Sales Order Item", production_order.sales_order_item, "description_sous_traitance"):
 					d.s_warehouse = frappe.db.get_value("Customer", production_order.customer, "default_warehouse")
 					d.is_sample_item = 1
 				else:
 					d.s_warehouse = item.default_warehouse
 			elif item.default_warehouse:
+				if print_debug: frappe.msgprint("Si entrepôt par défaut de l'item.")	
 				d.s_warehouse = item.default_warehouse
 			else:
+				if print_debug: frappe.msgprint("Entrepôt par défaut de l'OF.")	
 				d.s_warehouse = production_order.source_warehouse
 				
 	if purpose=="Manufacture":
