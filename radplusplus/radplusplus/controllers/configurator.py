@@ -29,6 +29,20 @@ def get_configurator_attributes_values(user_name):
 	return result
 	
 @frappe.whitelist()
+def get_all_attributes_fields(item_code):
+	args = {'item_code': item_code}
+	query = frappe.db.sql("""
+			SELECT
+				`tabItem Attribute`.`field_name`,
+				`tabItem Attribute`.`name`,
+				`tabItem Variant Attribute`.`parent`
+			FROM `tabItem Attribute`
+				lEFT JOIN `tabItem Variant Attribute` ON `tabItem Attribute`.`name` = `tabItem Variant Attribute`.attribute 
+				AND `tabItem Variant Attribute`.`parent` = %(item_code)s""", args, as_dict = 1)
+	
+	return query
+	
+@frappe.whitelist()
 def get_required_attributes_fields(item_code):
 	args = {'item_code': item_code}
 	query = frappe.db.sql("""

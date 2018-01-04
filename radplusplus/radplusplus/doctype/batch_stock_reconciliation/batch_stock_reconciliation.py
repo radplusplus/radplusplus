@@ -11,7 +11,7 @@ from frappe.utils import cstr, flt, cint
 from erpnext.stock.stock_ledger import update_entries_after
 from erpnext.controllers.stock_controller import StockController
 from erpnext.stock.utils import get_stock_balance
-from frappe.utils.xlsutils import get_xls
+from frappe.utils.xlsxutils import make_xlsx
 import json
 
 class OpeningEntryAccountError(frappe.ValidationError): pass
@@ -571,7 +571,7 @@ def get_columns():
 	return ["item_code","warehouse","batch_no","qty","valuation_rate"]
 	
 def get_file_name(warehouse):
-	return "{0}.{1}".format(warehouse.replace(" ", "-").replace("/", "-"), "xls")
+	return "{0}.{1}".format(warehouse.replace(" ", "-").replace("/", "-"), "xlsx")
 	
 @frappe.whitelist()
 def download(warehouse, posting_date, posting_time):
@@ -606,14 +606,14 @@ def download(warehouse, posting_date, posting_time):
 	# data.append(rows)
 	if print_debug: frappe.errprint("data : " + cstr(data))
 		
-	data = get_xls(data)
+	xlsx_file = get_xls(data)
 
-	if not data:
+	if not xlsx_file:
 		frappe.msgprint(_('No Data'))
 		return
 
-	frappe.local.response.filecontent = data
-	frappe.local.response.type = "download"
+	frappe.local.response.filecontent = xlsx_file.getvalue()
+	frappe.local.response.type = 'binary'
 	frappe.local.response.filename = get_file_name(warehouse)
 
 @frappe.whitelist()

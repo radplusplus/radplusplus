@@ -15,7 +15,7 @@ function LoadAttributesValues(printDebug, frm, child_field_name) {
     frappe.call({
         method: "radplusplus.radplusplus.controllers.configurator.get_configurator_attributes_values",
         args: {
-            "user_name": user
+            "user_name": frappe.session.user
         },
         callback: function(res) {
             //Convertir le message en Array
@@ -68,19 +68,27 @@ function LoadAttributesValues(printDebug, frm, child_field_name) {
 //		Modifications majeures pour utiliser un call en pyhton
 function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_items) {
     if (printDebug) console.log(__("ShowHideAttributes*****************************"));
+	var configurator_mode = false;
 
     //Si un code à été saisit
-    if (locals[cdt][cdn] && locals[cdt][cdn].template) {
-
+    // renmai - 2017-12-07 - if (locals[cdt][cdn] && locals[cdt][cdn].template) {
+	if (locals[cdt][cdn]) {
+		
         var soi = locals[cdt][cdn];
-        if (printDebug) console.log(__("soi:" + soi.template));
+        //if (printDebug) console.log(__("soi:" + soi.template));	
+		
+		var template = ""
+		
+		if (soi.configurator_of){
+			template = soi.configurator_of
+		}
 		
 		//Retrouver les attribut qui s'appliquent
 		frappe.call({
-			method: "radplusplus.radplusplus.controllers.configurator.get_required_attributes_fields",
-			args: {"item_code": soi.template},
+			method: "radplusplus.radplusplus.controllers.configurator.get_all_attributes_fields",
+			args: {"item_code": template}, // renmai - 2017-12-07 
 			callback: function(res) {
-				if (printDebug) console.log(__("CALL BACK get_required_attributes_fields"));
+				if (printDebug) console.log(__("CALL BACK get_all_attributes_fields"));
 				//Convertir le message en Array
 				var attributes = (res.message || {});
 				
@@ -104,20 +112,37 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
 					if (printDebug) console.log(__(field));
 					
 					if (printDebug) console.log(__("field.name :" + field.name ));
-					if (printDebug) console.log(__("field.field_name :" + field.fieldname ));
+					if (printDebug) console.log(__("field.fieldname :" + field.fieldname ));
+					
+					if (typeof attributes[field.fieldname] !== 'undefined'){
+						if (printDebug) console.log(__("attributes[field.fieldname].name : " + attributes[field.fieldname].name ));
+						field.hidden_due_to_dependency = true;
+						configurator_mode = true;
+					}
 					
 					// Si c'est un field du configurateur
 					// Et qu'il n'est pas dans la liste des attributs
-					if (field.fieldtype == "Check" && field.fieldname.toLowerCase().startsWith("show"))
-					{
-						locals[cdt][cdn][field.fieldname] = 0;
-						var field_name = field.fieldname.toLowerCase().substring(4);
-						
-						if (typeof attributes[field_name] !== 'undefined'){
-							//if (printDebug) console.log(__("field.fieldname :" + field.fieldname ));
-							locals[cdt][cdn][field.fieldname] = 1;
+					
+					// renmai 2017-12-07
+					// if (field.fieldtype == "Check" && field.fieldname.toLowerCase().startsWith("show"))
+					// {
+					//locals[cdt][cdn][field.fieldname] = 0;
+					//var field_name = field.fieldname.toLowerCase().substring(4);
+					
+					if (typeof attributes[field.fieldname] !== 'undefined'){
+						if (printDebug) console.log(__("if (typeof attributes[field.fieldname] !== 'undefined') "));
+						//if (printDebug) console.log(__("field.fieldname :" + field.fieldname ));
+						// renmai 2017-12-07
+						//locals[cdt][cdn][field.fieldname] = 1;
+						if (attributes[field.fieldname].parent != null){
+							field.hidden_due_to_dependency = false;
+							if (printDebug) console.log(__("attributes[field.fieldname].parent : " + attributes[field.fieldname].parent ));
 						}
 					}
+					
+					// renmai 2017-12-07
+					refresh_field(field);
+					// }
 				});
 
 				//Reloader les valeurs par défaut suite aux changements
@@ -127,10 +152,10 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
 				if (refresh_items)
 					refresh_field("items");
 
-				if (printDebug) console.log(__("CALL BACK get_required_attributes_fields END"));
+				if (printDebug) console.log(__("CALL BACK get_all_attributes_fields END"));
 			}
 		});
-    }
+	}
 }
 
 function set_milling_if_different(cdt, cdn, fieldname, value) {
@@ -174,16 +199,17 @@ function SetConfiguratorOf(printDebug, frm, cdt, cdn) {
 				var grid_row = cur_frm.open_grid_row();
 				frappe.model.set_value(soi.doctype, soi.name, "configurator_of", res.message.configurator_of);
 				frappe.model.set_value(soi.doctype, soi.name, "has_configuration", 1);
-				refresh_field("items");
+				//refresh_field("items");
 			}
 		});
     }
 	else{
 		if (printDebug) console.log(__("SetConfiguratorOf sans template"));
 		var grid_row = cur_frm.open_grid_row();
-		grid_row.grid_form.fields_dict.configurator_of.set_value("");
+		//grid_row.grid_form.fields_dict.configurator_of.set_value("");
 		frappe.model.set_value(soi.doctype, soi.name, "has_configuration", 0);
-		refresh_field("items");
+		frappe.model.set_value(soi.doctype, soi.name, "configurator_of", "");
+		//refresh_field("items");
 	}
 }
 
@@ -348,7 +374,7 @@ function ReconfigurerItemVariant(printDebug, doc, cdt, cdn) {
 					frappe.call({
 						method: "radplusplus.radplusplus.controllers.configurator.get_item_variant_attributes_values",
 						args: {
-							"user_name": user,
+							"user_name": frappe.session.user,
 							"item_code": soi.item_code
 						},
 						callback: function(res) {
