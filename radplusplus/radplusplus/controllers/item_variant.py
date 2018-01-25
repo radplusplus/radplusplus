@@ -17,8 +17,7 @@ import radplusplus
 import myrador
 
 ########################## Section Rad++ ##########################
-print_debug = True
-
+print_debug = False
 		
 @frappe.whitelist()
 def make_description_from_template(template):
@@ -57,12 +56,7 @@ def regenerate_description_from_item_code(item_code):
 	doc_item = frappe.get_doc("Item",item_code)
 	if doc_item:
 		make_variant_description(doc_item)		 
-		doc_item.save(True)
-
-@frappe.whitelist()
-def item_before_insert(item, args):
-	if print_debug: frappe.errprint("item_before_insert :" + cstr(item))
-	make_variant_description(item)
+		doc_item.save(True)	
 
 @frappe.whitelist()
 def create_variant(item, args):
@@ -354,27 +348,39 @@ def get_show_attributes(item_code):
 def get_item_attributes_values(item_code):
 	#template_item_code = frappe.db.get_value("Item", {"item_code":item_code}, "variant_of")
 	args = {'item_code': item_code}
+	
+	from radplusplus.radplusplus.controllers.configurator import update_user_translations 
+	update_user_translations(frappe.db.get_value("User", frappe.session.user, "language"))
+	
 	query = frappe.db.sql("""
 			SELECT
-				`tabItem Variant Attribute`.attribute,
-				`tabItem Variant Attribute`.attribute_value
+				`tabItem Variant Attribute`.attribute,	
+				`tabItem Variant Attribute`.attribute as attribute_name_key,				
+				`tabItem Attribute Value`.attribute_value,
+				`tabItem Attribute Value`.attribute_value as item_attribute_value_key
 			FROM
 				`tabItem Variant Attribute`
+				INNER JOIN `tabItem Attribute Value` ON `tabItem Variant Attribute`.attribute = `tabItem Attribute Value`.parent
 			WHERE
 				`tabItem Variant Attribute`.parent = %(item_code)s
 			ORDER BY
-				`tabItem Variant Attribute`.idx ASC""", args, as_dict = 1)
+				`tabItem Variant Attribute`.idx ASC, `tabItem Attribute Value`.attribute_value ASC""", args, as_dict = 1)
+	
+	for attribute in query:
+		frappe.errprint("attribute : " + cstr(attribute))
+		attribute["attribute"] = _(attribute["attribute"])
+		attribute["attribute_value"] = _(attribute["attribute_value"])
 	
 	return query
-	
+		
 # 2016-11-04 
 @frappe.whitelist()
-def create_batch_variants(configurator_of, batch_name):
+def create_batch_variants(template, batch_name):
 	args = {'batch_name': batch_name}
 	query = frappe.db.sql("""
 			SELECT
-				`tabConfigurator Batch Attribute`.attribute_name,
-				`tabConfigurator Batch Attribute`.item_attribute_value
+				`tabConfigurator Batch Attribute`.attribute_name_key as attribute_name,
+				`tabConfigurator Batch Attribute`.item_attribute_value_key as item_attribute_value
 			FROM
 				`tabConfigurator Batch`
 			INNER JOIN `tabConfigurator Batch Attribute` ON `tabConfigurator Batch`.`name` = `tabConfigurator Batch Attribute`.parent
@@ -385,9 +391,7 @@ def create_batch_variants(configurator_of, batch_name):
 				`tabConfigurator Batch Attribute`.idx ASC""", args, as_list = 1)
 	
 	list_result={}
-	template_item_code = frappe.db.get_value("Item", {"item_code":configurator_of}, "configurator_of")
-	#if print_debug: frappe.errprint(configurator_of)
-	#if print_debug: frappe.errprint(template_item_code)
+	#template_item_code = frappe.db.get_value("Item", {"item_code":configurator_of}, "configurator_of")
 	
 	for attribute in query:
 		list_result[attribute[0]]=[]
@@ -396,14 +400,15 @@ def create_batch_variants(configurator_of, batch_name):
 		list_result[attribute[0]].append(attribute[1])
 
 	sets_of_values = list(itertools.product(*list_result.values()))
-	#if print_debug: frappe.errprint(sets_of_values)
+	frappe.errprint("sets_of_values : " + cstr(sets_of_values))
+	
 	created_items = ""
 	keys = list_result.keys()
 	for set in sets_of_values:
 		attribute_values = {}
 		for i in range(len(keys)):
 			attribute_values[keys[i]] = set[i]
-		variant = create_variant_and_submit(template_item_code, attribute_values)
+		variant = create_variant_and_submit(template, attribute_values)
 		created_items += variant.item_code + "\n\n"
 		
 	return created_items

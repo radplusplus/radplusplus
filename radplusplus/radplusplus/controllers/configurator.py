@@ -162,7 +162,18 @@ def groupe_attributes_and_translate(attributes_values):
 	return data
 	
 	
+@frappe.whitelist()
+def get_fields(item_code):
+	if print_debug: frappe.errprint("get_fields")
+		
+	fields = [
+		{"fieldtype":"Read Only", "fieldname":"item_code",
+			"label": _("Item Code"), "in_list_view":1},
+		{"fieldtype":"Check", "fieldname":"completed", 
+			"label": _("Completed"), "in_list_view":1}
+	]
 	
+	return fields
 	
 	
 	

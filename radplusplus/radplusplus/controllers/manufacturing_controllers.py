@@ -22,8 +22,6 @@ from erpnext.stock.utils import get_incoming_rate
 ########################## Section Rad++ ##########################
 print_debug = False
 		
-
-		
 def update_status(self, status=None):
 	'''Update status of production order if unknown'''
 	if not status:

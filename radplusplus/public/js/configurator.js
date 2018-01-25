@@ -37,7 +37,7 @@ function LoadAttributesValues(printDebug, frm, child_field_name) {
 				// do something with key
 				values = dictionary[key];
 				
-				//Construire les options
+				// Construire les options
 				var options = [];
 				
 				for (i = 0; i < values.length; ++i) {
@@ -51,9 +51,12 @@ function LoadAttributesValues(printDebug, frm, child_field_name) {
 				}
 				
 				//l'assigner au field
-				frappe.utils.filter_dict(cur_frm.fields_dict[child_field_name].grid.docfields, {
-					"fieldname": key
-				})[0].options = options;
+				frappe.utils.filter_dict(cur_frm.fields_dict[child_field_name].grid.docfields, {"fieldname": key})[0].options = options;
+				/* frappe.utils.filter_dict(cur_frm.fields_dict[child_field_name].grid.docfields, {"fieldname": key})[0].default = options[0].value;
+				
+				if (printDebug) console.log(__("options[0].value : " + options[0].value ));
+				if (printDebug) console.log(__("options[0].key : " + options[0].key )); */
+				//frappe.utils.filter_dict(cur_frm.fields_dict[child_field_name].grid.docfields, {"fieldname": key})[0].options[0] =  options[0];
 			}
 		}
     });
@@ -68,22 +71,19 @@ function LoadAttributesValues(printDebug, frm, child_field_name) {
 //		Modifications majeures pour utiliser un call en pyhton
 function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_items) {
     if (printDebug) console.log(__("ShowHideAttributes*****************************"));
-	var configurator_mode = false;
+	//var configurator_mode = false;
 
-    //Si un code à été saisit
-    // renmai - 2017-12-07 - if (locals[cdt][cdn] && locals[cdt][cdn].template) {
 	if (locals[cdt][cdn]) {
 		
-        var soi = locals[cdt][cdn];
-        //if (printDebug) console.log(__("soi:" + soi.template));	
+        var row = locals[cdt][cdn];
 		
 		var template = ""
 		
-		if (soi.configurator_of){
-			template = soi.configurator_of
+		if (row.configurator_of){
+			template = row.configurator_of
 		}
 		
-		//Retrouver les attribut qui s'appliquent
+		//Retrouver les attributs qui s'appliquent
 		frappe.call({
 			method: "radplusplus.radplusplus.controllers.configurator.get_all_attributes_fields",
 			args: {"item_code": template}, // renmai - 2017-12-07 
@@ -107,42 +107,50 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
 				if (printDebug) console.log(__("grid.docfields.length:" + grid.docfields.length));
 				
 				$.each(grid.docfields, function(i, field) {
-					//debugger;
-					if (printDebug) console.log(__("field:***"));
-					if (printDebug) console.log(__(field));
-					
-					if (printDebug) console.log(__("field.name :" + field.name ));
+					// debugger;
 					if (printDebug) console.log(__("field.fieldname :" + field.fieldname ));
 					
 					if (typeof attributes[field.fieldname] !== 'undefined'){
 						if (printDebug) console.log(__("attributes[field.fieldname].name : " + attributes[field.fieldname].name ));
-						field.hidden_due_to_dependency = true;
-						configurator_mode = true;
+						field.depends_on = "eval:false";
+						
+						if (attributes[field.fieldname].parent != null){
+							field.depends_on = "eval:true";
+							if (printDebug) console.log(__("attributes[field.fieldname].parent : " + attributes[field.fieldname].parent ));
+							
+							var field_value = frappe.model.get_value(row.doctype, row.name, field.fieldname);
+							if (!field_value){ 
+								var first_value = frappe.utils.filter_dict(cur_frm.fields_dict["items"].grid.docfields, {"fieldname": field.fieldname})[0].options[0]["value"]
+								frappe.model.set_value(row.doctype, row.name, field.fieldname, first_value);
+							}
+							else{
+								console.log(__("field_value : " + field_value));	
+							}
+						}
+						//configurator_mode = true;
 					}
 					
-					// Si c'est un field du configurateur
-					// Et qu'il n'est pas dans la liste des attributs
 					
-					// renmai 2017-12-07
-					// if (field.fieldtype == "Check" && field.fieldname.toLowerCase().startsWith("show"))
-					// {
-					//locals[cdt][cdn][field.fieldname] = 0;
-					//var field_name = field.fieldname.toLowerCase().substring(4);
-					
-					if (typeof attributes[field.fieldname] !== 'undefined'){
+					/* if (typeof attributes[field.fieldname] !== 'undefined'){
 						if (printDebug) console.log(__("if (typeof attributes[field.fieldname] !== 'undefined') "));
-						//if (printDebug) console.log(__("field.fieldname :" + field.fieldname ));
-						// renmai 2017-12-07
-						//locals[cdt][cdn][field.fieldname] = 1;
 						if (attributes[field.fieldname].parent != null){
 							field.hidden_due_to_dependency = false;
 							if (printDebug) console.log(__("attributes[field.fieldname].parent : " + attributes[field.fieldname].parent ));
 						}
-					}
+					} */
 					
 					// renmai 2017-12-07
 					refresh_field(field);
 					// }
+					
+					
+					
+					/* if (printDebug) console.log(__(attributes[j]));
+					if (grid_row.grid_form.fields_dict[attributes[j][0]]){
+						grid_row.grid_form.fields_dict[attributes[j][0]].set_value(attributes[j][1]);
+					} */
+						
+					
 				});
 
 				//Reloader les valeurs par défaut suite aux changements
@@ -152,6 +160,28 @@ function ShowHideAttributes(printDebug, frm, cdt, cdn, reload_defaults, refresh_
 				if (refresh_items)
 					refresh_field("items");
 
+				//pour chaque attribut
+				/* for (var j = 0; j < attributes.length; j++) {
+					if (printDebug) console.log(__(attributes[j]));
+					if (grid_row.grid_form.fields_dict[attributes[j][0]]){
+						grid_row.grid_form.fields_dict[attributes[j][0]].set_value(attributes[j][1]);
+					}
+					
+				} */
+				
+				/* var grid_row = cur_frm.open_grid_row();
+				$.each(attributes, function(i, attribute) {
+				// for (var j = 0; j < len(attributes); j++) {
+					if (attribute.parent != null) {
+						if (printDebug) console.log(__("attribute.field_name : " + attribute.field_name));	
+						if (grid_row.grid_form.fields_dict[attribute.field_name] && cur_frm.cur_grid.grid_form.fields_dict[attribute.field_name].df.fieldtype == "Select"){
+							if (printDebug) console.log(__("grid_row.grid_form.fields_dict[attribute.field_name] : " + grid_row.grid_form.fields_dict[attribute.field_name]));	
+							frappe.model.set_value(row.doctype, row.name, attribute.field_name, cur_frm.cur_grid.grid_form.fields_dict[attribute.field_name].df.options[0].key);
+							//grid_row.grid_form.fields_dict[attribute.field_name].set_value(attribute[j][1]);
+						}	
+					}				
+				}); */
+					
 				if (printDebug) console.log(__("CALL BACK get_all_attributes_fields END"));
 			}
 		});
@@ -198,7 +228,6 @@ function SetConfiguratorOf(printDebug, frm, cdt, cdn) {
 				if (printDebug) console.log(__("res.message.configurator_of:" + res.message.configurator_of));
 				var grid_row = cur_frm.open_grid_row();
 				frappe.model.set_value(soi.doctype, soi.name, "configurator_of", res.message.configurator_of);
-				frappe.model.set_value(soi.doctype, soi.name, "has_configuration", 1);
 				//refresh_field("items");
 			}
 		});
@@ -207,7 +236,6 @@ function SetConfiguratorOf(printDebug, frm, cdt, cdn) {
 		if (printDebug) console.log(__("SetConfiguratorOf sans template"));
 		var grid_row = cur_frm.open_grid_row();
 		//grid_row.grid_form.fields_dict.configurator_of.set_value("");
-		frappe.model.set_value(soi.doctype, soi.name, "has_configuration", 0);
 		frappe.model.set_value(soi.doctype, soi.name, "configurator_of", "");
 		//refresh_field("items");
 	}
@@ -442,6 +470,8 @@ function set_focus(field) {
 		field.$input.focus();
 	}
 }
+
+
 
 ////////////////////////// FIN CONFIGURATEUR //////////////////////////
 //////////////////////////////////////////

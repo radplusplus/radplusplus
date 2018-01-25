@@ -14,7 +14,7 @@ import myrador
 
 ########################## Section Rad++ ##########################
 print_debug = False
-			
+
 @frappe.whitelist()
 def reasign_batch(item_code, batch, stock_entry):
 	doc_batch = frappe.get_doc("Batch",batch)

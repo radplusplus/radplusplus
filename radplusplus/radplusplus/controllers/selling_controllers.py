@@ -14,7 +14,7 @@ import myrador
 from frappe.model.mapper import get_mapped_doc
 
 ########################## Section Rad++ ##########################
-print_debug = False
+print_debug = True
 			
 @frappe.whitelist()
 def make_delivery_note(source_name, target_doc=None):
@@ -46,13 +46,19 @@ def make_delivery_note(source_name, target_doc=None):
 		target.run_method("calculate_taxes_and_totals")
 
 	def update_item(source, target, source_parent):
+			
 		target.base_amount = (flt(source.qty) - flt(source.delivered_qty)) * flt(source.base_rate)
 		target.amount = (flt(source.qty) - flt(source.delivered_qty)) * flt(source.rate)
 		
+		if print_debug: frappe.logger().debug("target.amount = " + cstr(target.amount))		
+				
 		if frappe.db.exists("Production Order", {"sales_order_item" : source.name}):
-			production_order = frappe.get_doc("Production Order", {"sales_order_item" : source.name})		
+			production_order = frappe.get_doc("Production Order", {"sales_order_item" : source.name})
+			
+			if print_debug: frappe.logger().debug("production_order = " + cstr(production_order))		
 			if production_order:
 				target.batch_no = production_order.batch_no
+				if print_debug: frappe.logger().debug("production_order = " + cstr(production_order))	
 				target.nombre_de_boite = frappe.db.get_value("Batch", production_order.batch_no, "nombre_de_boite")
 				target.nbr_palette = frappe.db.get_value("Batch", production_order.batch_no, "nbr_palette")
 				
@@ -62,7 +68,9 @@ def make_delivery_note(source_name, target_doc=None):
 		else:
 			target.qty = flt(source.qty) - flt(source.delivered_qty)
 		
-
+	
+	if print_debug: frappe.logger().debug("target.amount = " + cstr(target.amount))
+			
 	target_doc = get_mapped_doc("Sales Order", source_name, {
 		"Sales Order": {
 			"doctype": "Delivery Note",
