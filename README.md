@@ -1,6 +1,6 @@
 ## RADplusplus
 
-RAD++ additions to erpnext
+RAD++ additions to ERPNext
 
 - Item Configurator
 - Dynamic BOM creator
