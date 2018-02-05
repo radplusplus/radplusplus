@@ -10,7 +10,6 @@ from frappe.utils import cstr, flt, nowdate
 from frappe.desk.form.linked_with import get_linked_doctypes, get_linked_docs
 import erpnext
 import radplusplus
-import myrador
 from frappe.model.mapper import get_mapped_doc
 from erpnext.accounts.party import set_taxes
 

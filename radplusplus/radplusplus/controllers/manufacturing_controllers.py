@@ -10,7 +10,6 @@ from frappe.utils import cstr, flt
 import erpnext
 import time
 import radplusplus
-import myrador
 import json
 from erpnext.stock.doctype.stock_entry.stock_entry import get_additional_costs
 from erpnext.manufacturing.doctype.bom.bom import get_bom_items_as_dict
@@ -165,17 +164,6 @@ def update_transferred_qty(self, status):
 	self.update_planned_qty()
 	frappe.msgprint(_("Production Order status is {0}").format(status))
 	self.notify_update()
-	
-@frappe.whitelist()
-def stop_unstop(self, status):
-	""" Called from client side on Stop/Unstop event"""
-	self = frappe.get_doc("Production Order", self)
-	status = update_status(self, status)
-	self.update_planned_qty()
-	frappe.msgprint(_("Production Order status is {0}").format(status))
-	self.notify_update()
-	from myrador.myrador.doctype.production_order_operation_scheduler.production_order_operation_scheduler  import make_from_production_order
-	make_from_production_order(self)
 
 @frappe.whitelist()
 def on_cancel(self,method):

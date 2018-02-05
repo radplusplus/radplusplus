@@ -9,8 +9,6 @@ from frappe import _
 from frappe.utils import cstr, flt
 from frappe.desk.form.linked_with import get_linked_doctypes, get_linked_docs
 import erpnext
-import radplusplus
-import myrador
 
 ########################## Section Rad++ ##########################
 print_debug = False

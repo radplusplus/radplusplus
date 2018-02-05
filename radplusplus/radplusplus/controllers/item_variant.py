@@ -14,7 +14,6 @@ import erpnext
 from erpnext.controllers.item_variant import validate_item_variant_attributes
 import time
 import radplusplus
-import myrador
 
 ########################## Section Rad++ ##########################
 print_debug = False

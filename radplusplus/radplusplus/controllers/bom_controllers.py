@@ -40,7 +40,7 @@ def make_bom_from_template(template, create_new_if_exist):
 	if len(items_list) > 25 :
 		#make_bom_from_list_of_items(items_list, create_new_if_exist)
 		from frappe.utils.background_jobs import enqueue
-		enqueue("myrador.myrador.doctype.bom_maker.bom_maker.make_bom_from_list_of_items",  items_list=items_list, create_new_if_exist=create_new_if_exist) 		
+		enqueue("radplusplus.radplusplus.controllers.bom_controllers.bom_controllers.make_bom_from_list_of_items",  items_list=items_list, create_new_if_exist=create_new_if_exist) 		
 		frappe.msgprint("BOM en cours de création.")
 	else:
 		make_bom_from_list_of_items(items_list, create_new_if_exist)
