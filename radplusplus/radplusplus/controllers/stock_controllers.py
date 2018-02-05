@@ -54,7 +54,8 @@ def reasign_batch(item_code, batch, stock_entry):
 						frappe.throw(_("Le lot {0} est lié au document {1}. Veuillez supprimer tous les liens avec le lot {0} avant de continuer").format(batch,link.name))
 					for doc_detail_name in frappe.get_all("Purchase Receipt Item", {"batch_no":batch,"parent":link.name}, "name"):
 						frappe.db.set_value("Purchase Receipt Item", doc_detail_name, "batch_no","")
-		frappe.db.set_value("Batch", batch, "item",item_code)
+	
+	frappe.db.set_value("Batch", batch, "item",item_code)
 	
 		
 	
