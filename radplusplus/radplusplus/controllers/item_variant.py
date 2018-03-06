@@ -16,7 +16,7 @@ import time
 import radplusplus
 
 ########################## Section Rad++ ##########################
-print_debug = False
+print_debug = True
 		
 @frappe.whitelist()
 def make_description_from_template(template):
@@ -64,14 +64,14 @@ def create_variant(item, args):
 		
 	start_time = time.time()
 	variant = erpnext.controllers.item_variant.create_variant(item.item_code, args)
-	if print_debug: frappe.errprint("--- create_variant %s seconds ---" % (time.time() - start_time))
+	if print_debug: frappe.logger().debug("--- create_variant %s seconds ---" % (time.time() - start_time))
 
 	# RENMAI - 2017-07-07 - Permet de copier la propriété uninheritable lors de la création d'un variant.
 	for d in variant.attributes:
-		if print_debug: frappe.errprint("d.attribute : " + d.attribute)
+		if print_debug: frappe.logger().debug("d.attribute : " + d.attribute)
 		uninheritable = frappe.get_value("Item Variant Attribute", {"parent":item.item_code,"attribute":d.attribute},"uninheritable")
 		if uninheritable:			
-			if print_debug: frappe.errprint("uninheritable : " + cstr(uninheritable))
+			if print_debug: frappe.logger().debug("uninheritable : " + cstr(uninheritable))
 			d.uninheritable = uninheritable
 	
 	from radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode import create_from_item
@@ -82,7 +82,7 @@ def create_variant(item, args):
 
 @frappe.whitelist()
 def get_variant(template, args, variant=None):
-	if print_debug: frappe.errprint("radpp get_variant ")
+	if print_debug: frappe.logger().debug("radpp get_variant ")
 	"""Validates Attributes and their Values, then looks for an exactly matching Item Variant
 
 		:param item: Template Item
@@ -94,12 +94,12 @@ def get_variant(template, args, variant=None):
 	if not args:
 		frappe.throw(_("Please specify at least one attribute in the Attributes table"))
 	
-	if print_debug: frappe.errprint(" before import " )
+	if print_debug: frappe.logger().debug(" before import " )
 	from radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode import get_item_from_attribute_value_list
 	
-	if print_debug: frappe.errprint(" after import " )
+	if print_debug: frappe.logger().debug(" after import " )
 	item_code = get_item_from_attribute_value_list(template, args.values())
-	if print_debug: frappe.errprint(" item_code : " + cstr(item_code))
+	if print_debug: frappe.logger().debug(" item_code : " + cstr(item_code))
 	if item_code:
 		return item_code
 		
@@ -122,7 +122,7 @@ def make_variant_description(variant, template=None):
 	#, u'Wood Species': u'Pine'
 	#, u'Thickness': u'4/4'}
 	
-	if print_debug: frappe.errprint("variant : " + cstr(variant.name))
+	if print_debug: frappe.logger().debug("variant : " + cstr(variant.name))
 	if variant.variant_of is not None:
 		template = template or frappe.get_doc("Item", variant.variant_of)
 		variant.set('language',[])
@@ -130,7 +130,7 @@ def make_variant_description(variant, template=None):
 			jinjaTemplate = template.description
 			values = {}
 				
-			if print_debug: frappe.errprint("template.language : " + template.language)
+			if print_debug: frappe.logger().debug("template.language : " + template.language)
 			
 			"""
 				Passe chaque attribut du variant.
@@ -155,32 +155,32 @@ def make_variant_description(variant, template=None):
 				values[attribute.field_name] = target_name or d.attribute_value
 				#values[d.attribute] = target_name or d.attribute_value
 				
-			if print_debug: frappe.errprint("jinjaTemplate : " + jinjaTemplate)
-			if print_debug: frappe.errprint("values : " + cstr(values))
+			if print_debug: frappe.logger().debug("jinjaTemplate : " + jinjaTemplate)
+			if print_debug: frappe.logger().debug("values : " + cstr(values))
 			if print_debug: frappe.logger().debug("jinjaTemplate : " + jinjaTemplate)
 			if print_debug: frappe.logger().debug("values : " + cstr(values))
 			description = render_template(jinjaTemplate, values)
 			
-			if print_debug: frappe.errprint("description : " + description)
+			if print_debug: frappe.logger().debug("description : " + description)
 			
 			filters = {"parent": variant.name,
 							"parentfield": "language",
 							"parenttype": "Item",
 							"language": template.language}
 			#name = frappe.db.get_value("Item Language",	filters,"name",None,False,False,False)
-			#if print_debug and name: frappe.errprint("name : " + name)
+			#if print_debug and name: frappe.logger().debug("name : " + name)
 			language_description = None
-			# if print_debug and name: frappe.errprint("language_description : " )
+			# if print_debug and name: frappe.logger().debug("language_description : " )
 			# for d in self.language:
 				# if d.language = template.language
 					# d.db_set('description', description, update_modified = False)
 			# if name:
-				# if print_debug: frappe.errprint("if name" + name)
-				# if print_debug: frappe.errprint("description : " + description)
+				# if print_debug: frappe.logger().debug("if name" + name)
+				# if print_debug: frappe.logger().debug("description : " + description)
 				# #language_description = frappe.get_doc("Item Language", name)
 				# frappe.db.set_value("Item Language", name, "description", description)
 			# else:
-			#if print_debug: frappe.errprint("Else : " )
+			#if print_debug: frappe.logger().debug("Else : " )
 			values = filters
 			values["doctype"] = "Item Language"
 			language_description = frappe.get_doc(values)
@@ -189,7 +189,7 @@ def make_variant_description(variant, template=None):
 			
 				
 			# if not language_description:
-				# if print_debug: frappe.errprint("if not language_description")
+				# if print_debug: frappe.logger().debug("if not language_description")
 				# values = filters
 				# values["doctype"] = "Item Language"
 				# language_description = frappe.get_doc(values)
@@ -201,33 +201,33 @@ def make_variant_description(variant, template=None):
 @frappe.whitelist()
 def create_variant_and_submit(template_item_code, args):
 	print_debug = True
-	if print_debug: frappe.errprint("--- create_variant_and_submit ---")
+	if print_debug: frappe.logger().debug("--- create_variant_and_submit ---")
 	
 	start_time = time.time()
 	
 	if isinstance(args, basestring):
 		args = json.loads(args)
 	
-	if print_debug: frappe.errprint(template_item_code)
-	#if print_debug: frappe.errprint(args)
+	if print_debug: frappe.logger().debug(template_item_code)
+	#if print_debug: frappe.logger().debug(args)
 	
 	template = frappe.get_doc("Item", template_item_code)
 	
 	start_time1 = time.time()
 	create_missing_attributes_values(template, args)
-	frappe.errprint("--- create_missing_attributes_values %s seconds ---" % (time.time() - start_time1))
+	if print_debug: frappe.logger().debug("--- create_missing_attributes_values %s seconds ---" % (time.time() - start_time1))
 	
 	start_time2 = time.time()
 	validate_item_variant_attributes(template, args)
-	frappe.errprint("--- validate_item_variant_attributes %s seconds ---" % (time.time() - start_time2))
+	if print_debug: frappe.logger().debug("--- validate_item_variant_attributes %s seconds ---" % (time.time() - start_time2))
 	
 	start_time3 = time.time()
 	variant = erpnext.controllers.item_variant.get_variant(template.name, args)
-	frappe.errprint("--- get_variant %s seconds ---" % (time.time() - start_time3))
+	if print_debug: frappe.logger().debug("--- get_variant %s seconds ---" % (time.time() - start_time3))
 	if variant is None:
 		start_time4 = time.time()
 		variant = create_variant(template, args)
-		frappe.errprint("--- create_variant %s seconds ---" % (time.time() - start_time4))
+		if print_debug: frappe.logger().debug("--- create_variant %s seconds ---" % (time.time() - start_time4))
 		
 		#Tenter de trouver un item avec le meme code
 		#duplicate_item_code = frappe.db.sql_list("""select item_name from `tabItem` item where item_name=%s)""",variant.item_code)
@@ -236,17 +236,17 @@ def create_variant_and_submit(template_item_code, args):
 		if not frappe.db.exists("Item", variant.item_code):
 			variant.docs = 1
 			variant.save(True)
-			frappe.errprint("--- variant.save(True) ---")
-		frappe.errprint("--- save %s seconds ---" % (time.time() - start_time5))
+			if print_debug: frappe.logger().debug("--- variant.save(True) ---")
+		if print_debug: frappe.logger().debug("--- save %s seconds ---" % (time.time() - start_time5))
 		
 		start_time6 = time.time()
 		variant = frappe.get_doc("Item", variant.item_code)
-		frappe.errprint("--- get_doc %s seconds ---" % (time.time() - start_time6))
+		if print_debug: frappe.logger().debug("--- get_doc %s seconds ---" % (time.time() - start_time6))
 		
-		frappe.errprint("--- create_variant_and_submit %s seconds ---" % (time.time() - start_time))
+		if print_debug: frappe.logger().debug("--- create_variant_and_submit %s seconds ---" % (time.time() - start_time))
 		return variant
 		
-	frappe.errprint("--- create_variant_and_submit %s seconds ---" % (time.time() - start_time))
+	if print_debug: frappe.logger().debug("--- create_variant_and_submit %s seconds ---" % (time.time() - start_time))
 	return variant
 
 # 2016-10-30 - JDLP
@@ -296,7 +296,7 @@ def create_attribute_value_from_doctype(parent, attribute_value):
 
 
 def get_item_attribute_value(parent, attribute_value):
-	#if print_debug: frappe.errprint("get_item_attribute_value")
+	#if print_debug: frappe.logger().debug("get_item_attribute_value")
 	item_attribute_value = None
 
 	filters = {"parent":parent,"attribute_value":attribute_value}
@@ -341,6 +341,36 @@ def get_show_attributes(item_code):
 				t1.has_configuration = 1""", args, as_list = 1)
 	
 	return query
+	
+# @frappe.whitelist()
+# def get_item_attributes_values(item_code):
+	# template_item_code = frappe.db.get_value("Item", {"item_code":item_code}, "variant_of")
+	# args = {'item_code': item_code}
+	
+	# from radplusplus.radplusplus.controllers.configurator import update_user_translations 
+	# update_user_translations(frappe.db.get_value("User", frappe.session.user, "language"))
+	
+	# query = frappe.db.sql("""
+			# SELECT
+				# `tabItem Variant Attribute`.attribute,	
+				# `tabItem Variant Attribute`.attribute as attribute_name_key,				
+				# `tabItem Attribute Value`.attribute_value,
+				# `tabItem Attribute Value`.attribute_value as item_attribute_value_key
+			# FROM
+				# `tabItem Variant Attribute`
+				# INNER JOIN `tabItem Attribute Value` ON `tabItem Variant Attribute`.attribute = `tabItem Attribute Value`.parent
+			# WHERE
+				# `tabItem Variant Attribute`.parent = %(item_code)s
+			# ORDER BY
+				# `tabItem Variant Attribute`.idx ASC, `tabItem Attribute Value`.attribute_value ASC""", args, as_dict = 1)
+	
+	# for attribute in query:
+		# if print_debug: frappe.logger().debug("attribute : " + cstr(attribute))
+		# attribute["attribute"] = _(attribute["attribute"])
+		# attribute["attribute_value"] = _(attribute["attribute_value"])
+	
+	# if print_debug: frappe.logger().debug("attribute : " + cstr(attribute))
+	# return query
 
 # 2016-11-04 
 @frappe.whitelist()
@@ -355,21 +385,21 @@ def get_item_attributes_values(item_code):
 			SELECT
 				`tabItem Variant Attribute`.attribute,	
 				`tabItem Variant Attribute`.attribute as attribute_name_key,				
-				`tabItem Attribute Value`.attribute_value,
-				`tabItem Attribute Value`.attribute_value as item_attribute_value_key
+				`tabItem Variant Attribute`.attribute_value,
+				`tabItem Variant Attribute`.attribute_value as item_attribute_value_key
 			FROM
 				`tabItem Variant Attribute`
-				INNER JOIN `tabItem Attribute Value` ON `tabItem Variant Attribute`.attribute = `tabItem Attribute Value`.parent
 			WHERE
 				`tabItem Variant Attribute`.parent = %(item_code)s
 			ORDER BY
-				`tabItem Variant Attribute`.idx ASC, `tabItem Attribute Value`.attribute_value ASC""", args, as_dict = 1)
+				`tabItem Variant Attribute`.idx ASC""", args, as_dict = 1)
 	
 	for attribute in query:
-		frappe.errprint("attribute : " + cstr(attribute))
+		if print_debug: frappe.logger().debug("attribute : " + cstr(attribute))
 		attribute["attribute"] = _(attribute["attribute"])
 		attribute["attribute_value"] = _(attribute["attribute_value"])
 	
+	if print_debug: frappe.logger().debug("attribute : " + cstr(attribute))
 	return query
 		
 # 2016-11-04 
@@ -399,7 +429,7 @@ def create_batch_variants(template, batch_name):
 		list_result[attribute[0]].append(attribute[1])
 
 	sets_of_values = list(itertools.product(*list_result.values()))
-	frappe.errprint("sets_of_values : " + cstr(sets_of_values))
+	if print_debug: frappe.logger().debug("sets_of_values : " + cstr(sets_of_values))
 	
 	created_items = ""
 	keys = list_result.keys()

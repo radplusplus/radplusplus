@@ -12,19 +12,19 @@ import itertools
 import operator
 from frappe.utils.jinja import render_template
 
-print_debug = False
+print_debug = True
 
 @frappe.whitelist()
 def get_configurator_attributes_values(user_name):
-	if print_debug: frappe.errprint("get_configurator_attributes_values")
-	if print_debug: frappe.errprint("get_configurator_attributes_values")
-	if print_debug: frappe.errprint("user:" + user_name)
+	if print_debug: frappe.logger().debug("get_configurator_attributes_values")
+	if print_debug: frappe.logger().debug("get_configurator_attributes_values")
+	if print_debug: frappe.logger().debug("user:" + user_name)
 	lang = get_user_lang(user_name)
 	update_user_translations(lang)
 	attributes_values = get_configurator_attributes()
 	result = groupe_attributes_and_translate(attributes_values)
 		
-	if print_debug: frappe.errprint("result:" + cstr(result))
+	if print_debug: frappe.logger().debug("result:" + cstr(result))
 	
 	return result
 	
@@ -74,12 +74,12 @@ def get_item_variant_attributes_values(user_name, item_code):
 			ORDER BY
 			`tabItem Variant Attribute`.idx ASC""", args, as_list = 1)
 	update_user_translations(get_user_lang(user_name))
-	if print_debug: frappe.errprint("query:" + cstr(query))
+	if print_debug: frappe.logger().debug("query:" + cstr(query))
 	rows = []
 	for q in query:
 		rows.append((q[0],_(q[1])))
 	
-	if print_debug: frappe.errprint("rows:" + cstr(rows))
+	if print_debug: frappe.logger().debug("rows:" + cstr(rows))
 	return rows
 	
 @frappe.whitelist()
@@ -100,9 +100,10 @@ def get_user_lang(user_name):
 	lang = frappe.db.get_value("User", user_name, "language")
 	return lang
 
+
 def update_user_translations(lang):
 	from frappe.translate import get_user_translations
-	if print_debug: frappe.errprint(_("get_user_translations:"))
+	if print_debug: frappe.logger().debug(_("get_user_translations:"))
 	
 	#Clé pour ne pas refaire le traitement
 	key = 'rad_translation_update'
@@ -115,16 +116,16 @@ def update_user_translations(lang):
 	if not out.has_key(key) or out[key] != lang:
 		# pour chaque enregistrement dans la table de translation (fr)
 		for t in frappe.db.get_values("Translation",filters={'language_code' : 'fr'}, fieldname = "*"):
-			if print_debug: frappe.errprint("source_name:" + t['source_name'] + ", target_name:" + t['target_name'])
+			if print_debug: frappe.logger().debug("source_name:" + t['source_name'] + ", target_name:" + t['target_name'])
 			
 			#renverser le dictionnnaire si l'utilateur est en "en"
 			#source_name:Width in inches, target_name:Largeur en pouce
 			if (lang == 'en'):
 				out[t['target_name']] = t['source_name']
-				if print_debug: frappe.errprint(t['target_name'] + ":" + t['source_name'])
+				if print_debug: frappe.logger().debug(t['target_name'] + ":" + t['source_name'])
 			else:
 				out[t['source_name']] = t['target_name']
-				if print_debug: frappe.errprint(t['source_name'] + ":" + t['target_name'])
+				if print_debug: frappe.logger().debug(t['source_name'] + ":" + t['target_name'])
 				
 		frappe.local.lang_full_dict.update(out)
 		out[key] = lang
@@ -143,7 +144,7 @@ def get_configurator_attributes():
 		`tabItem Attribute Value`.ordering ASC,
 		`tabItem Attribute Value`.attribute_value ASC""")
 		
-	#if print_debug: frappe.errprint("configurator_attributes:" + cstr(query))
+	#if print_debug: frappe.logger().debug("configurator_attributes:" + cstr(query))
 	
 	return query
 	
@@ -156,7 +157,7 @@ def groupe_attributes_and_translate(attributes_values):
 		for item in subiter:
 			#Tuple of value and translation
 			t = (item[1], _(item[1]))
-			if print_debug: frappe.errprint(t)
+			if print_debug: frappe.logger().debug(t)
 			list.append(t)
 		data[key] = list
 	return data
@@ -164,7 +165,7 @@ def groupe_attributes_and_translate(attributes_values):
 	
 @frappe.whitelist()
 def get_fields(item_code):
-	if print_debug: frappe.errprint("get_fields")
+	if print_debug: frappe.logger().debug("get_fields")
 		
 	fields = [
 		{"fieldtype":"Read Only", "fieldname":"item_code",

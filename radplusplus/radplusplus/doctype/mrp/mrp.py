@@ -13,6 +13,6 @@ class MRP(Document):
 	
 @frappe.whitelist()
 def generate():
-	#frappe.msgprint(frappe._('Hello! '))
+	frappe.msgprint(frappe._('Hello! '))
 	radplusplus.radplusplus.reorder_item.reorder_item()
 

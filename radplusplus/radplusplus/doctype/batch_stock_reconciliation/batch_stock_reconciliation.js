@@ -63,6 +63,8 @@ frappe.ui.form.on('Batch Stock Reconciliation', {
 						posting_time: frm.doc.posting_time,
 						as_dict: 1
 					},
+					freeze: 1,
+					freeze_message: __("Please wait"),
 					callback: function(r) {
 						var items = [];
 						frm.clear_table("items");
