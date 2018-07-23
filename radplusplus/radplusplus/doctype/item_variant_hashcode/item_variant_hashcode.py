@@ -9,6 +9,8 @@ from frappe.model.document import Document
 import hashlib
 from radplusplus.radplusplus.controllers.item_variant import get_item_variant_attributes_values
 
+print_debug = True
+
 class ItemVariantHashCode(Document):
 	pass
 
@@ -37,8 +39,8 @@ def get_hash_code(template_name, attribute_value_list):
 	#att_str = template_name
 	attributes = get_item_variant_attributes_values(template_name)
 	
-	frappe.errprint("attributes: " + cstr(attributes))
-	frappe.errprint("attribute_value_list: " + cstr(attribute_value_list))
+	if print_debug: frappe.logger().debug("attributes: " + cstr(attributes))
+	if print_debug: frappe.logger().debug("attribute_value_list: " + cstr(attribute_value_list))
 	for value in attribute_value_list:
 		att_str += value
 		
@@ -53,8 +55,8 @@ def get_variant_hashcode_from_item_code(item_code):
 		return frappe.get_doc("Item Variant HashCode", name)
 		
 def get_item_from_variant_hashcode(hashcode):
-	frappe.errprint("get_item_from_variant_hashcode")
-	frappe.errprint("hashcode: " + hashcode)
+	if print_debug: frappe.logger().debug("get_item_from_variant_hashcode")
+	if print_debug: frappe.logger().debug("hashcode: " + hashcode)
 	
 	if frappe.db.exists("Item Variant HashCode", hashcode):
 		return frappe.get_doc("Item Variant HashCode", hashcode).item
@@ -81,7 +83,7 @@ def update_all_variants():
 ##### Hashcode #####
 @frappe.whitelist()
 def get_variant(template, args, variant=None):
-	frappe.errprint("radpp get_variant ")
+	if print_debug: frappe.logger().debug("radpp get_variant ")
 	"""Validates Attributes and their Values, then looks for an exactly matching Item Variant
 
 		:param item: Template Item
@@ -95,7 +97,7 @@ def get_variant(template, args, variant=None):
 	
 	item = get_item_from_attribute_value_list(template, args.values())
 	if item is not None:
-		frappe.errprint(" item_code : " + item.item_code)
+		if print_debug: frappe.logger().debug(" item_code : " + item.item_code)
 		return item.item_code
 		
 	#return find_variant(template, args, variant)

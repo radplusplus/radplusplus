@@ -12,7 +12,7 @@ from radplusplus.radplusplus.controllers.item_variant import (get_item_variant_a
 import operator
 
 ########################## Section Rad++ ##########################
-print_debug = False
+print_debug = True
 
 @frappe.whitelist()
 def make_bom_from_list_of_items(items_list, create_new_if_exist):	
@@ -35,7 +35,7 @@ def make_bom_from_template(template, create_new_if_exist):
 		fields=['name','variant_of']
 	)
 	
-	if print_debug: frappe.msgprint("len(items_list):" + str(len(items_list)))
+	if print_debug: frappe.logger().debug("len(items_list):" + str(len(items_list)))
 	
 	if len(items_list) > 25 :
 		#make_bom_from_list_of_items(items_list, create_new_if_exist)
@@ -47,15 +47,15 @@ def make_bom_from_template(template, create_new_if_exist):
 		
 @frappe.whitelist()
 def make_bom(item, method):
-	if print_debug: frappe.errprint("make_bom:")
-	if print_debug: frappe.errprint("item_code:" + item.item_code)
-	if print_debug: frappe.errprint("variant_of:" + str(item.variant_of))
-	if print_debug: frappe.errprint("configurator_of:" + str(item.configurator_of))
+	if print_debug: frappe.logger().debug("***make_bom***")
+	if print_debug: frappe.logger().debug("item_code:" + item.item_code)
+	if print_debug: frappe.logger().debug("variant_of:" + str(item.variant_of))
+	if print_debug: frappe.logger().debug("configurator_of:" + str(item.configurator_of))
 	
 	make_dynamic_bom(item)
 	
 def make_child_variant(parent, template_name):
-	if print_debug: frappe.errprint("make_child_variant:")
+	if print_debug: frappe.logger().debug("***make_child_variant***")
 	
 	#mapper selon le noms des attributes
 	attribute_map={}
@@ -63,36 +63,27 @@ def make_child_variant(parent, template_name):
 	parent_attributes = get_item_variant_attributes_values(parent.item_code)
 	for child_attribute in child_attributes:
 		for item_attribute in parent_attributes:
-			if print_debug: frappe.errprint("attribute: " + item_attribute[0])	
-			if print_debug: frappe.errprint("Uninheritable: " + cstr(item_attribute[3]))					
+			if print_debug: frappe.logger().debug("attribute: " + item_attribute[0])	
+			if print_debug: frappe.logger().debug("Uninheritable: " + cstr(item_attribute[3]))					
 			#if child_attribute[0] == item_attribute[0] and item_attribute[3] == 0:
 			if child_attribute[0] == item_attribute[0]:
 				attribute_map[child_attribute[0]] = child_attribute[0]
 	
-	if print_debug: frappe.errprint("parent: " + cstr(parent.variant_of))	
-	if print_debug: frappe.errprint("template_name: " + cstr(template_name))
-	if print_debug: frappe.errprint("attribute_map: " + cstr(attribute_map))
 	#mapper selon la configuration dans la bd
 	attribute_map_bd = get_attribute_mapping(parent.variant_of, template_name)
 	if attribute_map_bd:
 		attribute_map.update(attribute_map_bd)
-	if print_debug: frappe.errprint("attribute_map: " + cstr(attribute_map))
-	if print_debug: frappe.errprint("parent_attributes:" + str(parent_attributes))
 	parent_attributes_dict = {i[0]: i[1] for i in parent_attributes}
-	if print_debug: frappe.errprint("parent_attributes_dict:" + str(parent_attributes_dict))
 	args = {}
 	for key, value in attribute_map.iteritems():
 		att_value = get_attribute_value_mapping(parent.variant_of, template_name, key, value, parent_attributes_dict[key])
 		args[value] = att_value
 		
-		if print_debug: frappe.errprint("value: " + parent_attributes_dict[key])
-		if print_debug: frappe.errprint("value_map: " + att_value)
-		
 	# for child_attribute in child_attributes:
 		# for item_attribute in parent_attributes:
 			# if child_attribute[0] == item_attribute[0]:
 				# args[child_attribute[0]] = item_attribute[1]
-	if print_debug: frappe.errprint(args)
+	if print_debug: frappe.logger().debug(args)
 	return create_variant_and_submit(template_name, args)
 
 def make_bom_base(item, configurator_bom):
@@ -135,27 +126,15 @@ def make_bom_oper(parent, bom, config_bom_oper):
 	return bom_operation
 	
 def make_packaging(parent, bom):
-	
-	if print_debug: frappe.errprint("make_packaging")
-	if print_debug: frappe.errprint("parent.name : ")
-	if print_debug: frappe.errprint(parent.name)
-	if print_debug: frappe.errprint("parent.variant_of : ")
-	if print_debug: frappe.errprint(parent.variant_of)
+	if print_debug: frappe.logger().debug("***make_packaging***")
 	
 	if parent.variant_of not in ["PV","PH"]:
 		return
-	
-	if print_debug: frappe.errprint("if parent.variant_of not in")
 	
 	packaging = get_packaging(parent)
 	
 	if not packaging:
 		return
-		
-	if print_debug: frappe.errprint("packaging : ")
-	if print_debug: frappe.errprint(packaging)
-	if print_debug: frappe.errprint("packaging.item_code : ")
-	if print_debug: frappe.errprint(packaging.item_code)
 	
 	bom_item = frappe.new_doc("BOM Item")
 	bom_item.item_code = packaging.item_code
@@ -174,15 +153,9 @@ def get_packaging(parent):
 	attribute_packaging = frappe.db.get_value("Item Variant Attribute",
 	filters,"attribute_value")
 	
-	if print_debug: frappe.errprint("attribute_packaging : ")
-	if print_debug: frappe.errprint(attribute_packaging)
-	
 	filters = {"parent":parent.name,"attribute":"Flooring Width"}
 	attribute_flooring_width = frappe.db.get_value("Item Variant Attribute",
 	filters,"attribute_value")
-	
-	if print_debug: frappe.errprint("attribute_flooring_width : ")
-	if print_debug: frappe.errprint(attribute_flooring_width)
 	
 	if not attribute_flooring_width :
 		return
@@ -190,9 +163,6 @@ def get_packaging(parent):
 	filters = {"flooring_width":attribute_flooring_width}
 	box_size = frappe.db.get_value("Flooring Width",
 	filters,"box_size")
-	
-	if print_debug: frappe.errprint("box_size : ")
-	if print_debug: frappe.errprint(box_size)
 
 	if not attribute_flooring_width :
 		return
@@ -200,9 +170,6 @@ def get_packaging(parent):
 	filters = {"packaging":attribute_packaging, "box_size":box_size}
 	box = frappe.db.get_value("Plancher Par Boite",
 	filters,"box")
-	
-	if print_debug: frappe.errprint("box : ")
-	if print_debug: frappe.errprint(box)
 	
 	if not box :
 		return
@@ -212,11 +179,12 @@ def get_packaging(parent):
 	return box
 	
 def has_bom(item_code):
+	if print_debug: frappe.logger().debug("***has_bom***")
 	bom = get_bom(item_code)
 	
-	if print_debug: frappe.errprint("bom:" + str(bom))
+	if print_debug: frappe.logger().debug("bom:" + str(bom))
 	exist = (bom != None)
-	if print_debug: frappe.errprint("has_bom:" + str(exist))
+	if print_debug: frappe.logger().debug("has_bom:" + str(exist))
 	return exist
 
 def get_boms(item_code):
@@ -233,8 +201,7 @@ def get_bom(item_code):
 	return None
 	
 def make_dynamic_bom(item, create_new_if_exist = False):
-	#print_debug = item.item_code == "PV-CB-35-SNA-V4-M-5-58-18-677-10-STD-S-0-0"
-	if print_debug: frappe.errprint("make_dynamic_bom: ")
+	if print_debug: frappe.logger().debug("***make_dynamic_bom***")
 	#Si c'est un variant et que son modèle possède un constructeur de BOM
 	if item.variant_of is not None and frappe.db.exists("Configurator Bom", item.variant_of):
 		#RENMIA - 2017-09-11 - ajout pour ne pas créer de BOM pour une pièce qui n'a pas les mêmes attributs que le modèle.
@@ -255,9 +222,7 @@ def make_dynamic_bom(item, create_new_if_exist = False):
 			# return
 			
 		cb = frappe.get_doc("Configurator Bom", item.variant_of)
-		#test
-		#create_new_if_exist = item.item_code == "PV-CB-35-SNA-V4-M-5-58-18-677-10-STD-S-0-0"
-		#if print_debug: frappe.errprint("create_new_if_exist: " + cstr(create_new_if_exist))
+		
 		#Obtenir le bom actuel
 		bom = get_bom(item.item_code)
 		if bom is None or create_new_if_exist:
@@ -275,13 +240,10 @@ def make_dynamic_bom(item, create_new_if_exist = False):
 			
 		bom.insert(ignore_permissions=True)
 		bom.submit()
-		if print_debug: frappe.errprint("bom created: " + cstr(bom.name))
-		if print_debug: frappe.errprint("-------------------------------")
-		if print_debug: frappe.errprint("-------------------------------")
+		if print_debug: frappe.logger().debug("bom created: " + cstr(bom.name))
 
 def make_dynamic_bom_oper(parent, bom, bom_oper):
-	if print_debug: frappe.errprint("bom_oper: " + str(bom_oper.operation))
-	if print_debug: frappe.errprint("condition: " + str(bom_oper.condition))
+	if print_debug: frappe.logger().debug("***make_dynamic_bom_oper***")
 	
 	if bom_oper.condition == "Always":
 		make_bom_oper(parent, bom, bom_oper)
@@ -292,8 +254,7 @@ def make_dynamic_bom_oper(parent, bom, bom_oper):
 		not_implementer = True
 
 def make_dynamic_bom_item(parent, bom, bom_item):
-	if print_debug: frappe.errprint("bom_item: " + str(bom_item.operation))
-	if print_debug: frappe.errprint("condition: " + str(bom_item.condition))
+	if print_debug: frappe.logger().debug("***make_dynamic_bom_item***")
 	
 	if bom_item.condition == "Always":
 		make_bom_oper(parent, bom, bom_item)
@@ -304,15 +265,11 @@ def make_dynamic_bom_item(parent, bom, bom_item):
 		not_implementer = True
 		
 def evaluate_attribute_condition(parent, bom_condition):
-	if print_debug: frappe.errprint("evaluate_attribute_condition: ")
+	if print_debug: frappe.logger().debug("evaluate_attribute_condition: ")
 	attributes = {d.attribute:_(d.attribute_value) for d in parent.attributes}
-	#if print_debug: frappe.errprint("attributes: " + cstr(attributes))
-	if print_debug: frappe.errprint("attribute: " + cstr(bom_condition.attribute))
-	if print_debug: frappe.errprint("left: " + cstr(attributes[bom_condition.attribute]))
-	if print_debug: frappe.errprint("operator: " + cstr(bom_condition.operator))
-	if print_debug: frappe.errprint("right: " + cstr(_(bom_condition.attribute_value)))
+	
 	truth = get_truth(attributes[bom_condition.attribute],bom_condition.operator, bom_condition.attribute_value)
-	if print_debug: frappe.errprint("result: " + cstr(truth))
+	
 	return truth
 
 def get_truth(inp, relate, cut):

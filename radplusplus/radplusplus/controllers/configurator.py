@@ -12,7 +12,7 @@ import itertools
 import operator
 from frappe.utils.jinja import render_template
 
-print_debug = True
+print_debug = False
 
 @frappe.whitelist()
 def get_configurator_attributes_values(user_name):

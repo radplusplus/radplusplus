@@ -20,8 +20,8 @@ class EmptyStockReconciliationItemsError(frappe.ValidationError): pass
 print_debug = False
 
 class BatchStockReconciliation(StockController):
-	def __init__(self, arg1, arg2=None):
-		super(BatchStockReconciliation, self).__init__(arg1, arg2)
+	def __init__(self, *args, **kwargs):
+		super(BatchStockReconciliation, self).__init__(*args, **kwargs)
 		self.head_row = ["Item Code", "Warehouse", "Quantity", "Valuation Rate"]
 
 	def validate(self):
@@ -606,7 +606,7 @@ def download(warehouse, posting_date, posting_time):
 	# data.append(rows)
 	if print_debug: frappe.errprint("data : " + cstr(data))
 		
-	xlsx_file = get_xls(data)
+	xlsx_file = make_xlsx(data,warehouse)
 
 	if not xlsx_file:
 		frappe.msgprint(_('No Data'))

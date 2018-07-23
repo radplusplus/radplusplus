@@ -114,6 +114,8 @@ def get_sales_order_not_delivered(filters):
 		from `tabSales Order Item` tpline INNER JOIN `tabSales Order` tso ON
 			tpline.parent = tso.name
 		where delivered_qty < qty and
+			tpline.completed = 0
+			tso.status <> "Closed"
 			tso.docstatus = 1
 			{time_phase_conditions}
 			order by tso.delivery_date asc"""\

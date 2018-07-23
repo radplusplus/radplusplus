@@ -16,7 +16,7 @@ import time
 import radplusplus
 
 ########################## Section Rad++ ##########################
-print_debug = True
+print_debug = False
 		
 @frappe.whitelist()
 def make_description_from_template(template):
