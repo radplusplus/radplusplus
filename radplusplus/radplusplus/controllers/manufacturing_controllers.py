@@ -19,7 +19,7 @@ from frappe.model.mapper import get_mapped_doc
 from erpnext.stock.utils import get_incoming_rate
 
 ########################## Section Rad++ ##########################
-print_debug = True
+print_debug = False
 		
 def update_status(self, status=None):
 	if print_debug: frappe.logger().debug("---radplusplus.manufacturing_controllers.update_status---")
@@ -167,6 +167,25 @@ def update_transferred_qty(self, status):
 	self.update_planned_qty()
 	frappe.msgprint(_("Production Order status is {0}").format(status))
 	self.notify_update()
+	
+@frappe.whitelist()
+def update_reserved_qty(production_order):
+	if print_debug: frappe.logger().debug("---radplusplus.manufacturing_controllers.update_reserved_qty---")
+	if print_debug: frappe.logger().debug("production_order : " + production_order)
+	transferred_qty = frappe.db.sql('''select sum(qty)
+		from `tabStock Entry` entry, `tabStock Entry Detail` detail
+		where
+			entry.production_order = %s
+			and entry.purpose = "Material Transfer for Manufacture"
+			and entry.docstatus = 1
+			and detail.parent = entry.name''', (production_order))[0][0]
+			
+	if transferred_qty:		
+		if print_debug: frappe.logger().debug("return : " + cstr(transferred_qty))
+		return transferred_qty
+	else:
+		if print_debug: frappe.logger().debug("return : 0")
+		return 0
 
 # @frappe.whitelist()
 # def on_cancel(self,method):
@@ -528,6 +547,9 @@ def make_stock_entry(production_order_id, purpose, qty=None):
 	
 	production_order = frappe.get_doc("Production Order", production_order_id)
 	
+	if production_order.skip_transfer and purpose == "Material Transfer for Manufacture":
+		return
+	
 	if not frappe.db.get_value("Warehouse", production_order.wip_warehouse, "is_group") \
 			and not production_order.skip_transfer:
 		wip_warehouse = production_order.wip_warehouse
@@ -578,7 +600,7 @@ def make_stock_entry(production_order_id, purpose, qty=None):
 			# else:
 				# d.s_warehouse = production_order.source_warehouse
 				
-	if purpose=="Manufacture":
+	if purpose=="Manufacture" and not production_order.skip_transfer:
 		stock_entry_for_reserved_material = frappe.get_value("Stock Entry", filters={"production_order": production_order_id, "purpose":"Material Transfer for Manufacture", "docstatus":1})
 		reserved_material = frappe.get_doc("Stock Entry",stock_entry_for_reserved_material)
 		for d in stock_entry.items:
@@ -628,6 +650,11 @@ def make_production_orders(items, sales_order, company, project=None):
 			frappe.throw(_("Please select BOM against item {0}").format(i.get("item_code")))
 		if not i.get("pending_qty"):
 			frappe.throw(_("Please select Qty against item {0}").format(i.get("item_code")))
+		
+		customer=frappe.db.get_value("Sales Order", sales_order, "customer") # renmai - 2018-02-14
+		language = "fr"
+		if customer: 
+			language = frappe.db.get_value("Customer", customer, "language") # renmai - 2019-01-07
 
 		production_order = frappe.get_doc(dict(
 			doctype='Production Order',
@@ -637,7 +664,8 @@ def make_production_orders(items, sales_order, company, project=None):
 			company=company,
 			sales_order=sales_order,
 			sales_order_item=i['sales_order_item'],
-			customer=frappe.db.get_value("Sales Order", sales_order, "customer"), # renmai - 2018-02-14
+			customer=customer, # renmai - 2018-02-14
+			language=language, # renmai - 2019-01-07
 			reference_client=frappe.db.get_value("Sales Order", sales_order, "po_no"), # renmai - 2018-02-14 - 
 			project=project,
 			fg_warehouse=i['warehouse'],
@@ -719,3 +747,21 @@ def make_purchase_orders(items, production_order, company, project=None):
 		out.append(purchase_order)
 
 	return [p.name for p in out]
+	
+	
+@frappe.whitelist()
+def get_sales_order_item_description(sales_order,production_item):
+	''' Return Sales Order Items Details for link OF to Sales Order Item'''
+	
+	if print_debug: frappe.logger().debug("sales_order : " + sales_order)
+	
+	sales_order = frappe.get_doc("Sales Order", sales_order)
+	
+	sales_order_item_list = []
+	
+	for item in sales_order.get('items'):
+		if item.item_code == production_item:
+			sales_order_item_list.append({"key":item.name,"value":"{0} - {1} : {2}".format(item.idx,item.item_code,item.qty)})
+	
+	return sales_order_item_list
+	

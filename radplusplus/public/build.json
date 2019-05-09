@@ -1,0 +1,5 @@
+{
+	"js/radplusplus.min.js": [
+		"public/js/frappe/view/communication.js"
+	]
+}

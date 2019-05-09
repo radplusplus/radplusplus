@@ -3,7 +3,28 @@
 
 frappe.ui.form.on('Configurator Bom', {
 	refresh: function(frm) {
-
+		console.log("refresh")
+		if (cur_frm.doc.configurator_template) {
+			console.log("refresh - docstatus")	
+			cur_frm.add_custom_button(__('Make BOM'),
+				function() {
+					frappe.prompt([{label:"Overwrite existing BOM", fieldtype:"Check", fieldname:"create_new_if_exist", reqd: 0}],
+						function(data) {
+							frappe.call({
+								method:"radplusplus.radplusplus.controllers.bom_controllers.make_bom_from_template",
+								args: {
+									template: cur_frm.doc.configurator_template,						
+									create_new_if_exist: data.create_new_if_exist
+								},
+								callback: function(r) {
+									msgprint(__("Result : " + r)); return;
+								}
+							});
+						}
+					, __("Select template"), __("Make"));
+				}, __("Generate for all item variant")
+			);
+		}	
 	}
 });
 

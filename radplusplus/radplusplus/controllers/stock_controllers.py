@@ -9,6 +9,7 @@ from frappe import _
 from frappe.utils import cstr, flt
 from frappe.desk.form.linked_with import get_linked_doctypes, get_linked_docs
 import erpnext
+import json
 
 ########################## Section Rad++ ##########################
 print_debug = False
@@ -55,7 +56,37 @@ def reasign_batch(item_code, batch, stock_entry):
 	
 	frappe.db.set_value("Batch", batch, "item",item_code)
 	
-		
+@frappe.whitelist()
+def get_item_details_translated(args):
+
+	from erpnext.stock.get_item_details import get_item_details
+	out = get_item_details(args)
+	
+	args = process_args(args)
+	
+	lang = "fr" 
+	
+	if args.get("customer"):
+		lang = frappe.db.get_value("Customer", args.customer, "language") 
+	
+	if args.get("supplier"):
+		lang = frappe.db.get_value("Supplier", args.supplier, "language")
+	
+	out.update({
+			"description": frappe.db.get_value("Item Language", {"parent":args.item_code,"language":lang}, "description") or frappe.db.get_value("Item", args.item_code, "description")
+		})
+
+	if print_debug: frappe.logger().debug(out)
+	
+	return out
+	
+def process_args(args):
+	if isinstance(args, basestring):
+		args = json.loads(args)
+
+	args = frappe._dict(args)
+
+	return args
 	
 	
 
