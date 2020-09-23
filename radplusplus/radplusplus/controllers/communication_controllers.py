@@ -15,20 +15,20 @@ from frappe.utils import cstr, flt
 print_debug = True
 
 @frappe.whitelist()
-def get_standard_reply(template_name, doc, lang=None):
+def get_email_template(template_name, doc, lang=None):
 	'''Returns the processed HTML of a standard reply with the given doc '''
 	if isinstance(doc, string_types):
 		doc = json.loads(doc)
 
-	standard_reply = frappe.get_doc("Standard Reply", template_name)
+	email_template = frappe.get_doc("Email Template", template_name)
 	
 	if lang:
-		response = '{% set print_language = "' + lang + '" %}' + standard_reply.response
+		response = '{% set print_language = "' + lang + '" %}' + email_template.response
 	else:
-		response = '{% set print_language = language %}' + standard_reply.response
+		response = '{% set print_language = language %}' + email_template.response
 	
 	if print_debug: frappe.logger().debug("response : " + response )
 	
-	return {"subject" : frappe.render_template(_(standard_reply.subject,lang), doc),
+	return {"subject" : frappe.render_template(_(email_template.subject,lang), doc),
 			"message" : frappe.render_template(response, doc)}
 	

@@ -48,9 +48,6 @@ def make_bom_from_template(template, create_new_if_exist):
 @frappe.whitelist()
 def make_bom(item, method):
 	if print_debug: frappe.logger().debug("***make_bom***")
-	if print_debug: frappe.logger().debug("item_code:" + item.item_code)
-	if print_debug: frappe.logger().debug("variant_of:" + str(item.variant_of))
-	if print_debug: frappe.logger().debug("configurator_of:" + str(item.configurator_of))
 	
 	make_dynamic_bom(item)
 	
@@ -62,9 +59,7 @@ def make_child_variant(parent, template_name):
 	child_attributes = get_item_variant_attributes_values(template_name)
 	parent_attributes = get_item_variant_attributes_values(parent.item_code)
 	for child_attribute in child_attributes:
-		for item_attribute in parent_attributes:
-			if print_debug: frappe.logger().debug("attribute: " + item_attribute[0])	
-			if print_debug: frappe.logger().debug("Uninheritable: " + cstr(item_attribute[3]))					
+		for item_attribute in parent_attributes:				
 			#if child_attribute[0] == item_attribute[0] and item_attribute[3] == 0:
 			if child_attribute[0] == item_attribute[0]:
 				attribute_map[child_attribute[0]] = child_attribute[0]
@@ -79,11 +74,6 @@ def make_child_variant(parent, template_name):
 		att_value = get_attribute_value_mapping(parent.variant_of, template_name, key, value, parent_attributes_dict[key])
 		args[value] = att_value
 		
-	# for child_attribute in child_attributes:
-		# for item_attribute in parent_attributes:
-			# if child_attribute[0] == item_attribute[0]:
-				# args[child_attribute[0]] = item_attribute[1]
-	if print_debug: frappe.logger().debug(args)
 	return create_variant_and_submit(template_name, args)
 
 def make_bom_base(item, configurator_bom):
@@ -204,22 +194,6 @@ def make_dynamic_bom(item, create_new_if_exist = False):
 	if print_debug: frappe.logger().debug("***make_dynamic_bom***")
 	#Si c'est un variant et que son modèle possède un constructeur de BOM
 	if item.variant_of is not None and frappe.db.exists("Configurator Bom", item.variant_of):
-		#RENMIA - 2017-09-11 - ajout pour ne pas créer de BOM pour une pièce qui n'a pas les mêmes attributs que le modèle.
-		# frappe.errprint(item.name)
-		# frappe.errprint(item.variant_of)
-		# item_attributes = frappe.get_list(
-			# "Item Variant Attribute",
-			# filters={'parent': item.name},
-			# fields=['name']
-		# )
-		# template_attributes = frappe.get_list(
-			# "Item Variant Attribute",
-			# filters={'parent': item.variant_of},
-			# fields=['name']
-		# )
-		
-		# if item_attributes != template_attributes:
-			# return
 			
 		cb = frappe.get_doc("Configurator Bom", item.variant_of)
 		

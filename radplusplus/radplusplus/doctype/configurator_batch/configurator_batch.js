@@ -103,7 +103,7 @@ cur_frm.fields_dict['template'].get_query = function(doc) {
 // Update list of item attribute values
 function update_item_attribute_values_table(doc) {	
 	frappe.call({
-		method: "radplusplus.radplusplus.controllers.item_variant.get_item_attributes_values",
+		method: "radplusplus.radplusplus.controllers.item_variant.get_template_attributes_values",
 		args: {"item_code": doc.template},
 		freeze: true,
 		freeze_message: __("Please wait ..."),
