@@ -10,7 +10,6 @@ app_icon = "octicon octicon-file-directory"
 app_color = "'blue'"
 app_email = "info@radplusplus.com"
 app_license = "MIT"
-fixtures = ["Custom Script"]
 
 boot_session = "radplusplus.startup.boot.boot_session"
 
@@ -18,8 +17,11 @@ boot_session = "radplusplus.startup.boot.boot_session"
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_js = "/assets/js/radplusplus.min.js"
-# app_include_js = "/assets/radplusplus/js/radplusplus.js"
+app_include_js = [
+	"/assets/js/radplusplus.min.js",
+	"/assets/js/configurator.min.js"
+	]
+	
 
 # include js, css files in header of web template
 # web_include_css = "/assets/radplusplus/css/radplusplus.css"
@@ -129,34 +131,16 @@ app_include_js = "/assets/js/radplusplus.min.js"
 
 # Overriding Whitelisted Methods
 # ------------------------------
-#
-#	"frappe.model.mapper.make_mapped_doc":"radplusplus.handler.make_mapped_doc",
 override_whitelisted_methods = {
 	"erpnext.erpnext.stock.utils.get_stock_balance":"radplusplus.radplusplus.radplusplus.stock.get_stock_balance",
 	"erpnext.crm.doctype.lead.lead.get_lead_details" : "radplusplus.radplusplus.controllers.selling_controllers.get_lead_details",
 	"erpnext.crm.doctype.opportunity.opportunity.get_lead_details" : "radplusplus.radplusplus.controllers.selling_controllers.get_lead_details",
 	"erpnext.controllers.item_variant.create_variant" : "radplusplus.radplusplus.controllers.item_variant.create_variant",
 	"erpnext.controllers.item_variant.get_variant" : "radplusplus.radplusplus.doctype.item_variant_hashcode.item_variant_hashcode.get_variant",
-	"erpnext.manufacturing.doctype.production_order.production_order.make_stock_entry":"radplusplus.radplusplus.controllers.manufacturing_controllers.make_stock_entry",
-	"erpnext.selling.doctype.sales_order.sales_order.make_production_orders" : "radplusplus.radplusplus.controllers.manufacturing_controllers.make_production_orders",
+	"erpnext.manufacturing.doctype.work_order.work_order.make_stock_entry":"radplusplus.radplusplus.controllers.manufacturing_controllers.make_stock_entry",
+	"erpnext.selling.doctype.sales_order.sales_order.make_work_orders" : "radplusplus.radplusplus.controllers.manufacturing_controllers.make_work_orders",
 	"erpnext.stock.get_item_details.get_item_details" : "radplusplus.radplusplus.controllers.stock_controllers.get_item_details_translated",
-	"frappe.email.doctype.standard_reply.standard_reply.get_standard_reply" : "radplusplus.radplusplus.controllers.communication_controllers.get_standard_reply"
+	"frappe.email.doctype.standard_reply.standard_reply.get_standard_reply" : "radplusplus.radplusplus.controllers.communication_controllers.get_standard_reply",
+	"erpnext.selling.doctype.sales_order.sales_order.make_delivery_note":"radplusplus.radplusplus.controllers.selling_controllers.make_delivery_note"
 	}
-# 	"erpnext.selling.doctype.sales_order.sales_order.make_delivery_note":"radplusplus.radplusplus.controllers.selling_controllers.make_delivery_note",
-#	"erpnext.selling.doctype.sales_order.sales_order.make_material_request":"radplusplus.sales_order_radpp.make_material_request",,
-#	"erpnext.selling.doctype.sales_order.sales_order.make_production_orders" : "radplusplus.radplusplus.controllers.manufacturing_controllers.make_production_orders"
 
-doctype_js = {
-	"Sales Order":["public/js/configurator.js"],
-	"Quotation":["public/js/configurator.js"],
-	"Purchase Order":["public/js/configurator.js"],
-	"Purchase Receipt":["public/js/configurator.js"],
-	"Stock Entry":["public/js/configurator.js"],
-	"Variant Price List":["public/js/configurator.js"],
-	"Opportunity":["public/js/configurator.js"],
-	"Material Request":["public/js/configurator.js"],
-	"Timesheet":["public/js/configurator.js"]
-}
-# doctype_list_js = {
-	# "Sales Order":["public/js/configurator.js"],
-# }

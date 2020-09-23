@@ -67,7 +67,14 @@ def get_item_details_translated(args):
 	lang = "fr" 
 	
 	if args.get("customer"):
-		lang = frappe.db.get_value("Customer", args.customer, "language") 
+		if print_debug: frappe.logger().debug(" if args.customer : " + args.customer)
+		if frappe.db.get_value("Customer", args.customer, "language"):
+			if print_debug: frappe.logger().debug(" if Customer ")
+			lang = frappe.db.get_value("Customer", args.customer, "language")
+			
+		if frappe.db.get_value("Lead", args.customer, "language"):
+			if print_debug: frappe.logger().debug(" if Lead ")
+			lang = frappe.db.get_value("Lead", args.customer, "language")
 	
 	if args.get("supplier"):
 		lang = frappe.db.get_value("Supplier", args.supplier, "language")

@@ -1,7 +1,0 @@
-{
- "custom_fields": [], 
- "custom_perms": [], 
- "doctype": "Production Plan Item", 
- "property_setters": [], 
- "sync_on_migrate": 1
-}

@@ -13,21 +13,14 @@ import radplusplus
 from frappe.model.mapper import get_mapped_doc
 from erpnext.accounts.party import set_taxes
 
-########################## Section Rad++ ##########################
-print_debug = False
+########################## Section Rad++ #########################
+print_debug = True
 			
 @frappe.whitelist()
 def make_delivery_note(source_name, target_doc=None):
 					
 	def set_missing_values(source, target):
-		if source.po_no:
-			if target.po_no:
-				target_po_no = target.po_no.split(", ")
-				target_po_no.append(source.po_no)
-				target.po_no = ", ".join(list(set(target_po_no))) if len(target_po_no) > 1 else target_po_no[0]
-			else:
-				target.po_no = source.po_no
-				
+					
 		delete_list = []
 		for d in target.get('items'):
 			if d.qty <= 0 :
@@ -35,14 +28,15 @@ def make_delivery_note(source_name, target_doc=None):
 				
 		# delete from doclist
 		if delete_list:
-			delivery_details = self.get('items')
-			self.set('items', [])
+			delivery_details = target.get('items')
+			target.set('items', [])
 			for d in delivery_details:
 				if d not in delete_list:
-					self.append('items', d)
+					target.append('items', d)
 					
 		target.ignore_pricing_rule = 1
 		target.run_method("set_missing_values")
+		target.run_method("set_po_nos")
 		target.run_method("calculate_taxes_and_totals")
 
 	def update_item(source, target, source_parent):
@@ -51,16 +45,16 @@ def make_delivery_note(source_name, target_doc=None):
 		target.amount = (flt(source.qty) - flt(source.delivered_qty)) * flt(source.rate)
 		
 		if print_debug: frappe.logger().debug("target.amount = " + cstr(target.amount))		
-				
-		if frappe.db.exists("Production Order", {"sales_order_item" : source.name}):
-			production_order = frappe.get_doc("Production Order", {"sales_order_item" : source.name})
+						
+		if frappe.db.exists("Work Order", {"sales_order_item" : source.name}):
+			work_order = frappe.get_doc("Work Order", {"sales_order_item" : source.name})
 			
-			if print_debug: frappe.logger().debug("production_order = " + cstr(production_order))		
-			if production_order:
-				target.batch_no = production_order.batch_no
-				if print_debug: frappe.logger().debug("production_order = " + cstr(production_order))	
-				target.nombre_de_boite = frappe.db.get_value("Batch", production_order.batch_no, "nombre_de_boite")
-				target.nbr_palette = frappe.db.get_value("Batch", production_order.batch_no, "nbr_palette")
+			if print_debug: frappe.logger().debug("work_order = " + cstr(work_order))		
+			if work_order:
+				target.batch_no = work_order.batch_no
+				if print_debug: frappe.logger().debug("work_order = " + cstr(work_order))	
+				target.nombre_de_boite = frappe.db.get_value("Batch", work_order.batch_no, "nombre_de_boite")
+				target.nbr_palette = frappe.db.get_value("Batch", work_order.batch_no, "nbr_palette")
 				
 				from radplusplus.radplusplus.doctype.batch_stock_reconciliation.batch_stock_reconciliation import get_item_warehouse_batch_actual_qty
 				
@@ -69,7 +63,7 @@ def make_delivery_note(source_name, target_doc=None):
 			target.qty = flt(source.qty) - flt(source.delivered_qty)
 		
 	
-	if print_debug: frappe.logger().debug("target.amount = " + cstr(target.amount))
+	if print_debug: frappe.logger().debug("*** make_delivery_note ***")
 			
 	target_doc = get_mapped_doc("Sales Order", source_name, {
 		"Sales Order": {

@@ -164,10 +164,23 @@ def groupe_attributes_and_translate(attributes_values):
 	
 	
 @frappe.whitelist()
-def get_fields(item_code):
+def get_fields(item_code=None):
 	if print_debug: frappe.logger().debug("get_fields")
-		
-	fields = [
+	
+	fields = []
+	template = ""
+	field_template = {"fieldtype":"Link", "fieldname":"template",
+			"label": _("Template"),"options": "Item","onchange":"function(e){console.log('ONCHANGE')}"}
+
+	
+	if item_code:
+		item = frappe.get_doc("Item", item_code)
+		if item.variant_of:
+			field_template["default"] = item.variant_of
+			
+	fields.append(field_template)
+			
+	fields_attributes = [
 		{"fieldtype":"Read Only", "fieldname":"item_code",
 			"label": _("Item Code"), "in_list_view":1},
 		{"fieldtype":"Check", "fieldname":"completed", 

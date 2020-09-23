@@ -1,5 +1,9 @@
 {
 	"js/radplusplus.min.js": [
-		"public/js/frappe/view/communication.js"
+		"public/js/frappe/view/communication.js",		
+		"public/js/radplusplus/provide.js"
+	],
+	"js/configurator.min.js": [
+		"public/js/configurator/configurator.js"
 	]
 }

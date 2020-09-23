@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.utils import cint
 
-print_debug = True
+print_debug = False
 
 def boot_session(bootinfo):
 	"""boot session - add custom translate"""
